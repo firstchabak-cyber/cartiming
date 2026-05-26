@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { getNaverAuthUrl } from "@/lib/auth/naver";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const state = randomBytes(16).toString("hex");
   const url = getNaverAuthUrl(state);
@@ -14,5 +16,6 @@ export async function GET() {
     maxAge: 60 * 10,
     path: "/",
   });
+  res.headers.set("Cache-Control", "no-store, max-age=0");
   return res;
 }
