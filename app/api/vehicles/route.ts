@@ -1,0 +1,115 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+
+const vehicleSchema = z.object({
+  manufacturer: z.string().trim().min(1, "제조사를 입력해주세요"),
+  model: z.string().trim().min(1, "모델명을 입력해주세요"),
+  year: z
+    .number()
+    .int()
+    .gte(1900, "올바른 연식을 입력해주세요")
+    .lte(new Date().getFullYear() + 1, "올바른 연식을 입력해주세요"),
+  mileage: z.number().int().nonnegative("주행거리는 0 이상이어야 합니다"),
+  trim: z.string().trim().min(1).optional(),
+  fuel_type: z.enum(["gasoline", "diesel", "hybrid", "ev", "lpg"]).optional(),
+  transmission: z.enum(["auto", "manual"]).optional(),
+  color: z.string().trim().min(1).optional(),
+  plate_number: z.string().trim().min(1).optional(),
+  registered_at: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  vin: z.string().trim().min(11).max(17).optional(),
+  displacement_cc: z.number().int().positive().optional(),
+  body_type: z
+    .enum([
+      "sedan",
+      "suv",
+      "hatchback",
+      "coupe",
+      "wagon",
+      "van",
+      "pickup",
+      "convertible",
+      "other",
+    ])
+    .optional(),
+  vehicle_class: z
+    .enum(["passenger", "van", "truck", "special"])
+    .optional(),
+  engine_code: z.string().trim().min(1).optional(),
+  inspection_valid_until: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  seating_capacity: z.number().int().gte(1).lte(60).optional(),
+  options: z.array(z.string().trim().min(1)).optional(),
+});
+
+export async function POST(request: Request) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "잘못된 요청 본문" }, { status: 400 });
+  }
+
+  const parsed = vehicleSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "입력값이 올바르지 않습니다",
+        issues: parsed.error.flatten().fieldErrors,
+      },
+      { status: 400 },
+    );
+  }
+
+  const input = parsed.data;
+  const registeredAt = input.registered_at ?? `${input.year}-01-01`;
+
+  const { data, error } = await supabase
+    .from("vehicles")
+    .insert({
+      user_id: user.id,
+      manufacturer: input.manufacturer,
+      model: input.model,
+      year: input.year,
+      mileage: input.mileage,
+      trim: input.trim ?? null,
+      fuel_type: input.fuel_type ?? null,
+      transmission: input.transmission ?? null,
+      color: input.color ?? null,
+      plate_number: input.plate_number ?? null,
+      registered_at: registeredAt,
+      vin: input.vin ?? null,
+      displacement_cc: input.displacement_cc ?? null,
+      body_type: input.body_type ?? null,
+      vehicle_class: input.vehicle_class ?? null,
+      engine_code: input.engine_code ?? null,
+      inspection_valid_until: input.inspection_valid_until ?? null,
+      seating_capacity: input.seating_capacity ?? null,
+      options: input.options && input.options.length > 0 ? input.options : null,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: "차량 저장에 실패했습니다", detail: error.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ id: data.id }, { status: 201 });
+}

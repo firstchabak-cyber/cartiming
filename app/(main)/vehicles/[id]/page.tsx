@@ -1,0 +1,423 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { LineChart, Pencil, Plus, Wrench, Wallet } from "lucide-react";
+import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { DeleteVehicleButton } from "@/components/vehicle/DeleteVehicleButton";
+import { DeleteMaintenanceButton } from "@/components/vehicle/DeleteMaintenanceButton";
+import { PhotoGallery } from "@/components/vehicle/PhotoGallery";
+import { CATEGORY_TONE } from "@/lib/constants/maintenance";
+import type { MaintenanceCategory } from "@/lib/constants/maintenance";
+import {
+  BODY_TYPE_LABELS,
+  VEHICLE_CLASS_LABELS,
+  FUEL_LABELS,
+  TRANSMISSION_LABELS,
+  type BodyType,
+  type VehicleClass,
+} from "@/lib/constants/vehicle";
+import { createClient } from "@/lib/supabase/server";
+import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/cn";
+import {
+  balanceAfterMonths,
+  monthlyPayment,
+  monthsBetween,
+  type LoanInfo,
+} from "@/lib/utils/loan";
+
+const SIGNAL_META: Record<
+  "sell_now" | "review" | "hold",
+  { label: string; tone: "success" | "warning" | "neutral" }
+> = {
+  sell_now: { label: "매각 적기", tone: "success" },
+  review: { label: "관망", tone: "warning" },
+  hold: { label: "보유 유지", tone: "neutral" },
+};
+
+export default async function VehicleDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) notFound();
+
+  const { data: vehicle } = await supabase
+    .from("vehicles")
+    .select(
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, loan_principal, loan_started_at, loan_months, loan_apr",
+    )
+    .eq("id", params.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!vehicle) notFound();
+
+  const loan: LoanInfo | null =
+    vehicle.loan_principal != null &&
+    vehicle.loan_started_at &&
+    vehicle.loan_months != null &&
+    vehicle.loan_apr != null
+      ? {
+          principal: vehicle.loan_principal,
+          startedAt: vehicle.loan_started_at,
+          months: vehicle.loan_months,
+          apr: vehicle.loan_apr,
+        }
+      : null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const elapsed = loan ? Math.max(0, monthsBetween(loan.startedAt, today)) : 0;
+  const currentBalance = loan
+    ? Math.round(balanceAfterMonths(loan, elapsed))
+    : null;
+  const monthly = loan ? Math.round(monthlyPayment(loan)) : null;
+  const remainingMonths = loan ? Math.max(0, loan.months - elapsed) : null;
+
+  const { data: latestAnalysisRaw } = await supabase
+    .from("price_analyses")
+    .select(
+      "current_price, predicted_6m, signal, rationale, generated_at",
+    )
+    .eq("vehicle_id", vehicle.id)
+    .eq("user_id", user.id)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const latestAnalysis = latestAnalysisRaw
+    ? {
+        ...latestAnalysisRaw,
+        signal: latestAnalysisRaw.signal as
+          | "sell_now"
+          | "review"
+          | "hold",
+      }
+    : null;
+
+  const { data: maintenanceRaw } = await supabase
+    .from("vehicle_maintenance")
+    .select("id, category, part, description, performed_at, cost")
+    .eq("vehicle_id", vehicle.id)
+    .eq("user_id", user.id)
+    .order("performed_at", { ascending: false });
+
+  const maintenance = (maintenanceRaw ?? []).map((m) => ({
+    ...m,
+    category: m.category as MaintenanceCategory,
+  }));
+
+  const { data: photoRows } = await supabase
+    .from("vehicle_photos")
+    .select("id, storage_path, sort_order")
+    .eq("vehicle_id", vehicle.id)
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: true });
+
+  const photos = await Promise.all(
+    (photoRows ?? []).map(async (p) => {
+      const { data } = await supabase.storage
+        .from("vehicle-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return { id: p.id, signed_url: data?.signedUrl ?? "" };
+    }),
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold">
+            {vehicle.manufacturer} {vehicle.model}
+            {vehicle.trim ? ` ${vehicle.trim}` : ""}
+          </h1>
+          <p className="text-sm text-muted">
+            {vehicle.year}년식 · {formatMileage(vehicle.mileage)}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link href={`/vehicles/${vehicle.id}/edit`}>
+            <Button variant="outline" size="sm">
+              <Pencil className="h-4 w-4" />
+              수정
+            </Button>
+          </Link>
+          <DeleteVehicleButton
+            vehicleId={vehicle.id}
+            label={`${vehicle.manufacturer} ${vehicle.model}`}
+          />
+        </div>
+      </header>
+
+      {photos.length > 0 && <PhotoGallery photos={photos} />}
+
+      <Card className="flex flex-col gap-2">
+        <CardTitle>기본 정보</CardTitle>
+        <dl className="grid grid-cols-2 gap-y-2 text-sm">
+          <dt className="text-muted">제조사</dt>
+          <dd className="text-right">{vehicle.manufacturer}</dd>
+          <dt className="text-muted">모델</dt>
+          <dd className="text-right">{vehicle.model}</dd>
+          {vehicle.trim && (
+            <>
+              <dt className="text-muted">트림</dt>
+              <dd className="text-right">{vehicle.trim}</dd>
+            </>
+          )}
+          <dt className="text-muted">연식</dt>
+          <dd className="text-right">{vehicle.year}년</dd>
+          <dt className="text-muted">주행거리</dt>
+          <dd className="text-right">{formatMileage(vehicle.mileage)}</dd>
+          {vehicle.fuel_type && (
+            <>
+              <dt className="text-muted">연료</dt>
+              <dd className="text-right">
+                {FUEL_LABELS[vehicle.fuel_type] ?? vehicle.fuel_type}
+              </dd>
+            </>
+          )}
+          {vehicle.transmission && (
+            <>
+              <dt className="text-muted">변속기</dt>
+              <dd className="text-right">
+                {TRANSMISSION_LABELS[vehicle.transmission] ??
+                  vehicle.transmission}
+              </dd>
+            </>
+          )}
+          {vehicle.color && (
+            <>
+              <dt className="text-muted">색상</dt>
+              <dd className="text-right">{vehicle.color}</dd>
+            </>
+          )}
+          {vehicle.plate_number && (
+            <>
+              <dt className="text-muted">번호판</dt>
+              <dd className="text-right">{vehicle.plate_number}</dd>
+            </>
+          )}
+        </dl>
+      </Card>
+
+      {(vehicle.vin ||
+        vehicle.displacement_cc ||
+        vehicle.body_type ||
+        vehicle.vehicle_class ||
+        vehicle.engine_code ||
+        vehicle.seating_capacity ||
+        vehicle.inspection_valid_until) && (
+        <Card className="flex flex-col gap-2">
+          <CardTitle>등록증 정보</CardTitle>
+          <dl className="grid grid-cols-2 gap-y-2 text-sm">
+            {vehicle.vehicle_class && (
+              <>
+                <dt className="text-muted">차종</dt>
+                <dd className="text-right">
+                  {VEHICLE_CLASS_LABELS[vehicle.vehicle_class as VehicleClass] ??
+                    vehicle.vehicle_class}
+                </dd>
+              </>
+            )}
+            {vehicle.body_type && (
+              <>
+                <dt className="text-muted">차체 형상</dt>
+                <dd className="text-right">
+                  {BODY_TYPE_LABELS[vehicle.body_type as BodyType] ??
+                    vehicle.body_type}
+                </dd>
+              </>
+            )}
+            {vehicle.displacement_cc != null && (
+              <>
+                <dt className="text-muted">배기량</dt>
+                <dd className="text-right">
+                  {vehicle.displacement_cc.toLocaleString("ko-KR")} cc
+                </dd>
+              </>
+            )}
+            {vehicle.engine_code && (
+              <>
+                <dt className="text-muted">원동기 형식</dt>
+                <dd className="text-right">{vehicle.engine_code}</dd>
+              </>
+            )}
+            {vehicle.seating_capacity != null && (
+              <>
+                <dt className="text-muted">승차 정원</dt>
+                <dd className="text-right">{vehicle.seating_capacity}명</dd>
+              </>
+            )}
+            {vehicle.vin && (
+              <>
+                <dt className="text-muted">차대번호</dt>
+                <dd className="break-all text-right font-mono text-xs">
+                  {vehicle.vin}
+                </dd>
+              </>
+            )}
+            {vehicle.inspection_valid_until && (
+              <>
+                <dt className="text-muted">검사 유효</dt>
+                <dd className="text-right">
+                  {formatDate(vehicle.inspection_valid_until)}
+                </dd>
+              </>
+            )}
+            <dt className="text-muted">최초 등록일</dt>
+            <dd className="text-right">{formatDate(vehicle.registered_at)}</dd>
+          </dl>
+        </Card>
+      )}
+
+      {vehicle.options && vehicle.options.length > 0 && (
+        <Card className="flex flex-col gap-2">
+          <CardTitle>옵션</CardTitle>
+          <div className="flex flex-wrap gap-1.5">
+            {(vehicle.options as string[]).map((opt) => (
+              <Badge key={opt} tone="neutral">
+                {opt}
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {loan && currentBalance != null && monthly != null && (
+        <Card className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">대출 현황</CardTitle>
+          </div>
+          <dl className="grid grid-cols-2 gap-y-1 text-sm">
+            <dt className="text-muted">원금</dt>
+            <dd className="text-right">{formatKRW(loan.principal)}</dd>
+            <dt className="text-muted">월 납입금</dt>
+            <dd className="text-right">{formatKRW(monthly)}</dd>
+            <dt className="text-muted">현재 잔액</dt>
+            <dd className="text-right font-semibold">
+              {formatKRW(currentBalance)}
+            </dd>
+            <dt className="text-muted">남은 기간</dt>
+            <dd className="text-right">{remainingMonths}개월</dd>
+          </dl>
+        </Card>
+      )}
+
+      {latestAnalysis ? (
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <CardTitle>최근 시세 분석</CardTitle>
+            <Badge tone={SIGNAL_META[latestAnalysis.signal].tone}>
+              {SIGNAL_META[latestAnalysis.signal].label}
+            </Badge>
+          </div>
+          <p className="text-2xl font-bold text-foreground">
+            {formatKRW(latestAnalysis.current_price)}
+          </p>
+          {currentBalance != null && (
+            <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+              <span className="text-muted">지금 매각 시 순수령액</span>
+              <span
+                className={cn(
+                  "font-bold",
+                  latestAnalysis.current_price - currentBalance < 0
+                    ? "text-danger"
+                    : "text-success",
+                )}
+              >
+                {formatKRW(latestAnalysis.current_price - currentBalance)}
+              </span>
+            </div>
+          )}
+          <CardDescription>{latestAnalysis.rationale}</CardDescription>
+          <p className="text-xs text-muted">
+            6개월 예상 {formatKRW(latestAnalysis.predicted_6m)} ·{" "}
+            {formatDate(latestAnalysis.generated_at)} 기준
+          </p>
+          <Link href={`/analysis?vehicleId=${vehicle.id}`}>
+            <Button variant="outline" fullWidth>
+              <LineChart className="h-4 w-4" />
+              다시 분석하기
+            </Button>
+          </Link>
+        </Card>
+      ) : (
+        <Card className="flex flex-col gap-3">
+          <CardTitle>시세 분석</CardTitle>
+          <CardDescription>
+            이 차량의 현재 시세와 향후 6개월 예상 시세를 AI로 분석해 드려요.
+          </CardDescription>
+          <Link href={`/analysis?vehicleId=${vehicle.id}`}>
+            <Button fullWidth>
+              <LineChart className="h-4 w-4" />
+              AI 시세 분석 보기
+            </Button>
+          </Link>
+        </Card>
+      )}
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground">
+            정비/사고 이력
+          </h2>
+          <Link href={`/vehicles/${vehicle.id}/maintenance/new`}>
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+              이력 추가
+            </Button>
+          </Link>
+        </div>
+
+        {maintenance.length === 0 ? (
+          <Card className="flex flex-col items-center gap-2 py-8 text-center">
+            <Wrench className="h-8 w-8 text-muted" />
+            <CardDescription>
+              등록된 이력이 없습니다. 사고·정비·교환 이력을 기록해두면 매각 시
+              참고할 수 있어요.
+            </CardDescription>
+          </Card>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {maintenance.map((m) => (
+              <li key={m.id}>
+                <Card>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Badge tone={CATEGORY_TONE[m.category]}>
+                          {m.category}
+                        </Badge>
+                        <CardTitle className="text-sm">{m.part}</CardTitle>
+                      </div>
+                      {m.description && (
+                        <CardDescription className="mt-1">
+                          {m.description}
+                        </CardDescription>
+                      )}
+                      <div className="mt-2 flex items-center gap-3 text-xs text-muted">
+                        <span>{formatDate(m.performed_at)}</span>
+                        {m.cost != null && <span>{formatKRW(m.cost)}</span>}
+                      </div>
+                    </div>
+                    <DeleteMaintenanceButton
+                      maintenanceId={m.id}
+                      label={`${m.category} · ${m.part}`}
+                    />
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
