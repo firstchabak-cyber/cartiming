@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const { data: vehicle, error: vehicleError } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", parsed.data.vehicleId)
     .eq("user_id", user.id)
