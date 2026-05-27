@@ -39,13 +39,17 @@ export default async function GaragePage() {
               <Link href={`/vehicles/${v.id}`}>
                 <Card className="flex items-center justify-between gap-3">
                   <div className="flex flex-col gap-1">
+                    {v.plate_number && (
+                      <span className="self-start rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                        {v.plate_number}
+                      </span>
+                    )}
                     <CardTitle>
                       {v.manufacturer} {v.model}
-                      {v.trim ? ` ${v.trim}` : ""}
+                      {v.trim ? ` · ${v.trim}` : ""}
                     </CardTitle>
                     <CardDescription>
                       {v.year}년식 · {formatMileage(v.mileage)}
-                      {v.plate_number ? ` · ${v.plate_number}` : ""}
                     </CardDescription>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted" />

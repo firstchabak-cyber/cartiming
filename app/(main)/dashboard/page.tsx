@@ -50,13 +50,17 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-3">
                       <Car className="h-5 w-5 text-primary" />
                       <div>
+                        {v.plate_number && (
+                          <span className="mb-0.5 inline-block rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                            {v.plate_number}
+                          </span>
+                        )}
                         <p className="text-sm font-semibold text-foreground">
                           {v.manufacturer} {v.model}
-                          {v.trim ? ` ${v.trim}` : ""}
+                          {v.trim ? ` · ${v.trim}` : ""}
                         </p>
                         <p className="text-xs text-muted">
                           {v.year}년식 · {formatMileage(v.mileage)}
-                          {v.plate_number ? ` · ${v.plate_number}` : ""}
                         </p>
                       </div>
                     </div>
