@@ -18,34 +18,80 @@ const ALLOWED_MIME = new Set([
 
 const EXTRACTION_PROMPT = `
 당신은 한국 자동차등록증 사진에서 정보를 추출하는 정확한 OCR + 파서입니다.
-입력 이미지가 자동차등록증이 아니거나 글자를 읽을 수 없으면 "not_registration": true 를 반환하세요.
-모든 필드는 읽히지 않으면 null. 추측하지 마세요.
+입력 이미지가 자동차등록증이 아니거나 글자를 거의 읽을 수 없으면 "not_registration": true 만 반환하세요.
+모든 필드는 읽히지 않으면 null. 추측하지 말되, 차명에서 제조사 추론은 한국차 상식 활용 가능합니다.
+중요: manufacturer 와 model 에 같은 문자열을 넣지 마세요 — 둘은 항상 분리된 값이어야 합니다.
+모든 값은 출력 직전에 좌우 공백·중복 공백을 정리하고 한 번씩만 등장하도록 하세요.
 
 다음 JSON 스키마로만 응답하세요 (다른 텍스트, 마크다운 펜스 금지):
 
 {
   "not_registration": boolean,
-  "manufacturer": string | null,          // 제조사. "차명" 에서 첫 단어. 예: "현대", "기아", "BMW"
-  "model": string | null,                  // 모델명. "차명" 에서 제조사 제외한 나머지. 예: "그랜저 IG", "쏘렌토 MQ4"
-  "trim": string | null,                   // 세부 등급. 등록증에 거의 없음 — 보통 null
-  "year": number | null,                   // 4자리 연도. "제작연월일" 의 연도
-  "registered_at": string | null,          // "YYYY-MM-DD". "최초등록일"
+
+  "manufacturer": string | null,
+  // 제조사 한글명. 다음 순서로 결정:
+  // (1) "차명" 필드 안에 제조사가 명시되어 있으면 그것 (예: "현대 그랜저" → "현대").
+  // (2) "차명" 이 모델명만 있으면 모델명으로 제조사 추론. 흔한 매핑:
+  //     - 그랜저/쏘나타/아반떼/엑센트/i30/i40/투싼/싼타페/팰리세이드/코나/베뉴/캐스퍼/스타리아/포터/마이티/넥쏘/아이오닉 → "현대"
+  //     - K3/K5/K7/K8/K9/모닝/레이/스토닉/셀토스/스포티지/쏘렌토/모하비/카니발/봉고/니로/EV6/EV9 → "기아"
+  //     - G70/G80/G90/GV60/GV70/GV80 → "제네시스"
+  //     - 토레스/티볼리/렉스턴/코란도/액티언/체어맨 → "KG모빌리티"
+  //     - 트레일블레이저/트랙스/이쿼녹스/콜로라도/말리부/스파크/임팔라/카마로 → "쉐보레"
+  //     - QM6/SM6/XM3/캡쳐/그랑꼴레오스/조에 → "르노코리아"
+  //     - BMW, Mercedes-Benz, Audi, Volkswagen, Volvo, Tesla, Lexus, Toyota, Honda, Porsche, Ford 등 수입차는 모델명에서 추론
+  // (3) 위 어느 것에도 해당하지 않으면 null.
+
+  "model": string | null,
+  // 모델명 (트림/연식 제외, 세대 코드는 포함). 예:
+  //   - 차명 "현대 그랜저 IG 3.0" → "그랜저 IG"
+  //   - 차명 "쏘렌토 MQ4" → "쏘렌토 MQ4"
+  //   - 차명 "BMW 320i" → "320i"
+  // 차명 전체가 단일 모델명이면 차명 그대로 사용.
+
+  "trim": string | null,
+  // 세부 트림/등급. 등록증에는 거의 없음 — 보통 null.
+
+  "year": number | null,
+  // 4자리 연도. 다음 순서로 결정:
+  // (1) "연식" 필드가 있으면 그것 (예: "2023" → 2023)
+  // (2) 없으면 "제작연월일" 의 연도 (예: "2022-03-15" → 2022)
+  // (3) 둘 다 없으면 "최초등록일" 의 연도
+
+  "registered_at": string | null,
+  // "YYYY-MM-DD" 포맷. "최초등록일" 에서.
+
   "fuel_type": "gasoline"|"diesel"|"hybrid"|"ev"|"lpg" | null,
-                                            // "사용연료" 매핑: 휘발유/가솔린→gasoline, 경유/디젤→diesel,
-                                            // 하이브리드→hybrid, 전기→ev, LPG/엘피지→lpg
-  "transmission": "auto" | "manual" | null,// 등록증에 거의 없음 — 보통 null
-  "displacement_cc": number | null,        // 배기량. "1999cc" 등에서 숫자만
+  // "사용연료" 매핑: 휘발유/가솔린→gasoline, 경유/디젤→diesel,
+  // 하이브리드(가솔린+전기 등)→hybrid, 전기→ev, LPG/엘피지/부탄→lpg
+
+  "transmission": "auto" | "manual" | null,
+  // 등록증에 거의 없음 — 보통 null.
+
+  "displacement_cc": number | null,
+  // 배기량. "1999cc" / "1,999" → 1999. 전기차는 보통 0 이거나 빈칸이면 null.
+
   "body_type": "sedan"|"suv"|"hatchback"|"coupe"|"wagon"|"van"|"pickup"|"convertible"|"other" | null,
-                                            // "차체의 형상" 매핑: 세단→sedan, 다목적형/SUV→suv,
-                                            // 해치백→hatchback, 쿠페→coupe, 왜건→wagon, 밴→van,
-                                            // 픽업→pickup, 컨버터블→convertible, 기타→other
+  // "차체의 형상" 매핑: 세단/세단형/4도어세단→sedan, 다목적형/SUV/스포츠유틸→suv,
+  // 해치백→hatchback, 쿠페/2도어→coupe, 왜건/스테이션왜건→wagon, 밴/원박스→van,
+  // 픽업/픽업트럭→pickup, 컨버터블/오픈카→convertible, 그 외→other
+
   "vehicle_class": "passenger"|"van"|"truck"|"special" | null,
-                                            // "차종" 매핑: 승용→passenger, 승합→van, 화물→truck, 특수→special
-  "engine_code": string | null,            // "원동기 형식". 예: "G6DM", "D4HA"
-  "seating_capacity": number | null,       // "승차정원"
-  "color": string | null,                  // 외장 색상 (등록증에 있는 경우만)
-  "vin": string | null,                    // 차대번호 (11~17자)
-  "plate_number": string | null            // 자동차등록번호. 예: "12가3456"
+  // "차종" 매핑: 승용→passenger, 승합→van, 화물→truck, 특수→special
+
+  "engine_code": string | null,
+  // "원동기 형식". 예: "G6DM", "D4HA", "N20B20"
+
+  "seating_capacity": number | null,
+  // "승차정원" 숫자만.
+
+  "color": string | null,
+  // 외장 색상. 등록증에 명시되어 있는 경우만 (보통 없음).
+
+  "vin": string | null,
+  // 차대번호. 11~17자 영숫자. 공백 제거.
+
+  "plate_number": string | null
+  // 자동차등록번호. "12가3456" / "123가4567" 형태. 공백 제거.
 }
 `;
 
@@ -174,19 +220,36 @@ export async function POST(request: Request) {
     );
   }
 
+  const cleanedManufacturer = parsed.manufacturer?.trim() || null;
+  const cleanedModelRaw = parsed.model?.trim() || null;
+  // manufacturer 와 model 이 동일하게 잡혀오면 model 쪽에서 manufacturer 토큰을 제거
+  let cleanedModel = cleanedModelRaw;
+  if (
+    cleanedManufacturer &&
+    cleanedModel &&
+    cleanedModel.toLowerCase() === cleanedManufacturer.toLowerCase()
+  ) {
+    cleanedModel = null;
+  } else if (cleanedManufacturer && cleanedModel) {
+    const prefix = cleanedManufacturer + " ";
+    if (cleanedModel.toLowerCase().startsWith(prefix.toLowerCase())) {
+      cleanedModel = cleanedModel.slice(prefix.length).trim() || null;
+    }
+  }
+
   const vehicle: LookupResult["vehicle"] = {
-    manufacturer: parsed.manufacturer ?? undefined,
-    model: parsed.model ?? undefined,
-    trim: parsed.trim ?? undefined,
+    manufacturer: cleanedManufacturer ?? undefined,
+    model: cleanedModel ?? undefined,
+    trim: parsed.trim?.trim() || undefined,
     year: parsed.year ?? undefined,
     fuel_type: parsed.fuel_type ?? undefined,
     transmission: parsed.transmission ?? undefined,
     displacement_cc: parsed.displacement_cc ?? undefined,
     body_type: parsed.body_type ?? undefined,
     vehicle_class: parsed.vehicle_class ?? undefined,
-    engine_code: parsed.engine_code ?? undefined,
-    color: parsed.color ?? undefined,
-    plate_number: parsed.plate_number ?? undefined,
+    engine_code: parsed.engine_code?.trim() || undefined,
+    color: parsed.color?.trim() || undefined,
+    plate_number: parsed.plate_number?.replace(/\s+/g, "") || undefined,
   };
 
   return NextResponse.json({
