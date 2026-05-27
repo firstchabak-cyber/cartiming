@@ -103,8 +103,57 @@ export async function GET(request: Request) {
       ).error;
     }
 
+    if (verifyError && linkData.properties.action_link) {
+      console.warn(
+        "verifyOtp failed in both forms, trying server-side action_link fetch",
+        verifyError.message,
+      );
+      try {
+        const resp = await fetch(linkData.properties.action_link, {
+          redirect: "manual",
+        });
+        const loc = resp.headers.get("location");
+        if (loc) {
+          const locUrl = new URL(loc);
+          const hash = new URLSearchParams(locUrl.hash.replace(/^#/, ""));
+          const accessToken = hash.get("access_token");
+          const refreshToken = hash.get("refresh_token");
+          const errInHash =
+            hash.get("error_description") ?? hash.get("error");
+
+          if (accessToken && refreshToken) {
+            const { error: setErr } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (!setErr) {
+              return NextResponse.redirect(`${origin}/dashboard`);
+            }
+            verifyError = setErr;
+          } else if (errInHash) {
+            verifyError = {
+              ...verifyError,
+              message: `action_link redirected with error: ${errInHash}`,
+            } as typeof verifyError;
+          } else {
+            verifyError = {
+              ...verifyError,
+              message: `action_link redirected without tokens to ${locUrl.origin}${locUrl.pathname}`,
+            } as typeof verifyError;
+          }
+        } else {
+          verifyError = {
+            ...verifyError,
+            message: `action_link fetch returned no Location (status ${resp.status})`,
+          } as typeof verifyError;
+        }
+      } catch (fetchErr) {
+        console.error("action_link fetch threw", fetchErr);
+      }
+    }
+
     if (verifyError) {
-      console.error("Naver verifyOtp failed (both paths)", verifyError);
+      console.error("Naver verifyOtp failed (all paths)", verifyError);
       return NextResponse.redirect(
         `${origin}/login?error=naver_session&reason=verify_otp&msg=${encodeURIComponent(verifyError.message)}`,
       );
