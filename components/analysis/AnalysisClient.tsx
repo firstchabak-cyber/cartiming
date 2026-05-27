@@ -293,7 +293,44 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                 </div>
               </div>
             )}
-            <CardDescription>{result.rationale}</CardDescription>
+            <div className="flex flex-col gap-2 text-sm text-foreground">
+              {result.rationale
+                .split(/\n{2,}/)
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0)
+                .map((paragraph, i) => {
+                  const headerMatch = paragraph.match(
+                    /^\[?(시세\s*평가|대출\s*분석|매각\s*권고)\]?[\s:：-]*/,
+                  );
+                  if (headerMatch) {
+                    const tone =
+                      headerMatch[1].replace(/\s/g, "") === "대출분석"
+                        ? "text-primary"
+                        : headerMatch[1].replace(/\s/g, "") === "매각권고"
+                          ? "text-success"
+                          : "text-foreground";
+                    const body = paragraph.slice(headerMatch[0].length).trim();
+                    return (
+                      <div key={i} className="flex flex-col gap-0.5">
+                        <p className={`text-xs font-semibold ${tone}`}>
+                          {headerMatch[1].replace(/\s/g, " ")}
+                        </p>
+                        <p className="text-sm text-muted whitespace-pre-line">
+                          {body}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p
+                      key={i}
+                      className="text-sm text-muted whitespace-pre-line"
+                    >
+                      {paragraph}
+                    </p>
+                  );
+                })}
+            </div>
           </Card>
 
           <Card className="flex flex-col gap-3">
