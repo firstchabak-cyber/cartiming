@@ -67,16 +67,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // Use "recovery" link type. For users we just created with
+    // email_confirm:true (always confirmed), Supabase routes
+    // generateLink({type:'magiclink'}) into the recovery_token column,
+    // but verifyOtp({type:'magiclink'|'email'}) reads from
+    // confirmation_token — so the token is never found. Using 'recovery'
+    // explicitly on both sides keeps them in the same column.
     const { data: linkData, error: linkError } =
       await admin.auth.admin.generateLink({
-        type: "magiclink",
+        type: "recovery",
         email: profile.email,
       });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      console.error("Naver magic link gen failed", linkError);
+      console.error("Naver recovery link gen failed", linkError);
       return NextResponse.redirect(
-        `${origin}/login?error=naver_session&reason=gen_link`,
+        `${origin}/login?error=naver_session&reason=gen_link&msg=${encodeURIComponent(linkError?.message ?? "no_hashed_token")}`,
       );
     }
 
@@ -85,75 +91,26 @@ export async function GET(request: Request) {
     let verifyError = (
       await supabase.auth.verifyOtp({
         token_hash: linkData.properties.hashed_token,
-        type: "email",
+        type: "recovery",
       })
     ).error;
 
     if (verifyError && linkData.properties.email_otp) {
       console.warn(
-        "verifyOtp(token_hash, email) failed, retrying with email+otp",
+        "verifyOtp(token_hash, recovery) failed, retrying with email+otp",
         verifyError.message,
       );
       verifyError = (
         await supabase.auth.verifyOtp({
           email: profile.email,
           token: linkData.properties.email_otp,
-          type: "email",
+          type: "recovery",
         })
       ).error;
     }
 
-    if (verifyError && linkData.properties.action_link) {
-      console.warn(
-        "verifyOtp failed in both forms, trying server-side action_link fetch",
-        verifyError.message,
-      );
-      try {
-        const resp = await fetch(linkData.properties.action_link, {
-          redirect: "manual",
-        });
-        const loc = resp.headers.get("location");
-        if (loc) {
-          const locUrl = new URL(loc);
-          const hash = new URLSearchParams(locUrl.hash.replace(/^#/, ""));
-          const accessToken = hash.get("access_token");
-          const refreshToken = hash.get("refresh_token");
-          const errInHash =
-            hash.get("error_description") ?? hash.get("error");
-
-          if (accessToken && refreshToken) {
-            const { error: setErr } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            if (!setErr) {
-              return NextResponse.redirect(`${origin}/dashboard`);
-            }
-            verifyError = setErr;
-          } else if (errInHash) {
-            verifyError = {
-              ...verifyError,
-              message: `action_link redirected with error: ${errInHash}`,
-            } as typeof verifyError;
-          } else {
-            verifyError = {
-              ...verifyError,
-              message: `action_link redirected without tokens to ${locUrl.origin}${locUrl.pathname}`,
-            } as typeof verifyError;
-          }
-        } else {
-          verifyError = {
-            ...verifyError,
-            message: `action_link fetch returned no Location (status ${resp.status})`,
-          } as typeof verifyError;
-        }
-      } catch (fetchErr) {
-        console.error("action_link fetch threw", fetchErr);
-      }
-    }
-
     if (verifyError) {
-      console.error("Naver verifyOtp failed (all paths)", verifyError);
+      console.error("Naver verifyOtp failed", verifyError);
       return NextResponse.redirect(
         `${origin}/login?error=naver_session&reason=verify_otp&msg=${encodeURIComponent(verifyError.message)}`,
       );
