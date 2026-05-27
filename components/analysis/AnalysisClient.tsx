@@ -509,6 +509,7 @@ function ShareButton({
   result: AnalysisResult;
 }) {
   const [copied, setCopied] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const buildText = () => {
     const name =
@@ -540,13 +541,33 @@ function ShareButton({
     return lines.join("\n");
   };
 
-  const handleShare = async () => {
-    const text = buildText();
-    // 모바일/지원 브라우저: 네이티브 공유 시트
-    if (
+  const text = buildText();
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // 권한 거부 등 — textarea 자동 선택으로 폴백
+      const ta = document.getElementById(
+        "share-text-area",
+      ) as HTMLTextAreaElement | null;
+      if (ta) {
+        ta.focus();
+        ta.select();
+      }
+    }
+  };
+
+  const handleClick = async () => {
+    // 모바일: 네이티브 공유 시트 우선
+    const canShare =
       typeof navigator !== "undefined" &&
-      typeof navigator.share === "function"
-    ) {
+      typeof navigator.share === "function" &&
+      // 모바일 디바이스로 추정 (PC 의 일부 브라우저는 share 가 있어도 잘 작동 안 함)
+      /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (canShare) {
       try {
         await navigator.share({
           title: "cartiming 시세 분석",
@@ -554,29 +575,81 @@ function ShareButton({
         });
         return;
       } catch {
-        // 사용자 취소 등 — 무시
+        // 취소 시 모달로 폴백하지 않고 종료
+        return;
       }
     }
-    // 데스크톱/미지원: 클립보드 복사
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // 클립보드 권한 없으면 prompt 로 표시
-      window.prompt("복사하세요:", text);
-    }
+    // PC / 미지원: 모달로 열기 (자동으로 복사도 시도)
+    setModalOpen(true);
+    void copyToClipboard();
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleShare}
-      className="flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
-      aria-label="공유"
-    >
-      <Share2 className="h-3.5 w-3.5" />
-      {copied ? "복사됨" : "공유"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        className="flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+        aria-label="공유"
+      >
+        <Share2 className="h-3.5 w-3.5" />
+        공유
+      </button>
+
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-md flex-col gap-3 overflow-hidden rounded-2xl bg-background p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-base font-semibold text-foreground">
+                시세 분석 공유
+              </p>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="rounded-full px-2 text-lg text-muted hover:text-foreground"
+                aria-label="닫기"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="text-xs text-muted">
+              ✅ 텍스트가 클립보드에 자동 복사되었어요. 카톡·메시지에 그대로
+              붙여넣기 (Ctrl+V) 하세요.
+            </p>
+
+            <textarea
+              id="share-text-area"
+              readOnly
+              value={text}
+              className="h-64 w-full resize-none rounded-lg border border-border bg-surface p-3 font-mono text-xs text-foreground focus:border-primary focus:outline-none"
+            />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="flex-1 rounded-xl border border-border bg-background py-2.5 text-sm font-medium text-foreground hover:bg-surface"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+              >
+                {copied ? "✓ 복사됨" : "📋 다시 복사"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
