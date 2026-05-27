@@ -81,13 +81,30 @@ export async function GET(request: Request) {
     }
 
     const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: linkData.properties.hashed_token,
-      type: "magiclink",
-    });
+
+    let verifyError = (
+      await supabase.auth.verifyOtp({
+        token_hash: linkData.properties.hashed_token,
+        type: "email",
+      })
+    ).error;
+
+    if (verifyError && linkData.properties.email_otp) {
+      console.warn(
+        "verifyOtp(token_hash, email) failed, retrying with email+otp",
+        verifyError.message,
+      );
+      verifyError = (
+        await supabase.auth.verifyOtp({
+          email: profile.email,
+          token: linkData.properties.email_otp,
+          type: "email",
+        })
+      ).error;
+    }
 
     if (verifyError) {
-      console.error("Naver verifyOtp failed", verifyError);
+      console.error("Naver verifyOtp failed (both paths)", verifyError);
       return NextResponse.redirect(
         `${origin}/login?error=naver_session&reason=verify_otp&msg=${encodeURIComponent(verifyError.message)}`,
       );
