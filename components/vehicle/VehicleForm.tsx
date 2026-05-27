@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, type Control } from "react-hook-form";
 import { z } from "zod";
@@ -118,6 +118,16 @@ export function VehicleForm(props: Props) {
     .join(", ");
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const errorBannerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (submitError && errorBannerRef.current) {
+      errorBannerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [submitError]);
   const [regOpen, setRegOpen] = useState(false);
   const [optOpen, setOptOpen] = useState((v?.options ?? []).length > 0);
   const [loanOpen, setLoanOpen] = useState(
@@ -283,7 +293,8 @@ export function VehicleForm(props: Props) {
     }
   };
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit(
+    async (values) => {
     setSubmitError(null);
 
     const hasAnyLoan =
@@ -372,7 +383,15 @@ export function VehicleForm(props: Props) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setSubmitError(data?.error ?? "저장에 실패했습니다");
+        const base = data?.error ?? `저장에 실패했습니다 (HTTP ${res.status})`;
+        const detail = data?.detail
+          ? ` — ${data.detail}`
+          : data?.issues
+            ? ` — ${Object.entries(data.issues)
+                .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+                .join(" / ")}`
+            : "";
+        setSubmitError(base + detail);
         return;
       }
       const data = isEdit ? null : await res.json().catch(() => null);
@@ -382,11 +401,46 @@ export function VehicleForm(props: Props) {
     } catch {
       setSubmitError("네트워크 오류로 저장에 실패했습니다");
     }
-  });
+    },
+    (formErrors) => {
+      const labels: Record<string, string> = {
+        manufacturer: "제조사",
+        model: "모델명",
+        year: "연식 (4자리 숫자)",
+        mileage: "주행거리",
+      };
+      const messages = Object.entries(formErrors).map(([k, err]) => {
+        const label = labels[k] ?? k;
+        const msg = (err as { message?: string })?.message;
+        return msg ? `${label} (${msg})` : label;
+      });
+      if (messages.length > 0) {
+        setSubmitError(`필수 정보가 빠졌거나 잘못됐습니다: ${messages.join(", ")}`);
+      }
+    },
+  );
 
   return (
     <Card>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        {submitError && (
+          <div
+            ref={errorBannerRef}
+            className="flex items-start gap-2 rounded-lg border border-danger bg-danger/10 px-3 py-2 text-sm text-danger"
+          >
+            <span className="font-semibold">⚠️ 저장 실패</span>
+            <span className="flex-1 break-words">{submitError}</span>
+            <button
+              type="button"
+              onClick={() => setSubmitError(null)}
+              className="text-danger/70 hover:text-danger"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* 차량등록증 사진으로 자동 채우기 */}
         <section className="flex flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
           <p className="text-sm font-semibold text-foreground">
