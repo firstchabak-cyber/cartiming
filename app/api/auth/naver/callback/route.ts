@@ -53,9 +53,30 @@ export async function GET(request: Request) {
         `${origin}/login?error=naver_failed&reason=list_users&msg=${encodeURIComponent(listError.message)}`,
       );
     }
-    const existing = list?.users?.find(
-      (u: { email?: string | null }) => u.email === profile.email,
+
+    type AuthUserLite = {
+      id: string;
+      email?: string | null;
+      deleted_at?: string | null;
+    };
+    const sameEmail = (list?.users ?? []).filter(
+      (u: AuthUserLite) => u.email === profile.email,
     );
+    const existing = sameEmail.find((u: AuthUserLite) => !u.deleted_at);
+    const softDeleted = sameEmail.filter((u: AuthUserLite) => !!u.deleted_at);
+
+    for (const stale of softDeleted) {
+      const { error: purgeError } = await admin.auth.admin.deleteUser(
+        stale.id,
+        false,
+      );
+      if (purgeError) {
+        console.error("Naver purge soft-deleted user failed", purgeError);
+        return NextResponse.redirect(
+          `${origin}/login?error=naver_failed&reason=purge_user&msg=${encodeURIComponent(purgeError.message)}`,
+        );
+      }
+    }
 
     const userMetadata = {
       name: profile.name ?? profile.nickname,
