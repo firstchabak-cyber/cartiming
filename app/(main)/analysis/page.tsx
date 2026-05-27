@@ -11,7 +11,7 @@ export default async function AnalysisPage() {
   const { data: vehicles } = user
     ? await supabase
         .from("vehicles")
-        .select("id, manufacturer, model, trim, year, mileage")
+        .select("id, manufacturer, model, trim, year, mileage, plate_number")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
     : { data: null };

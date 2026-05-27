@@ -23,6 +23,7 @@ type VehicleOption = {
   trim: string | null;
   year: number;
   mileage: number;
+  plate_number: string | null;
 };
 
 type LoanInfo = {
@@ -206,6 +207,7 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                     </p>
                     <p className="text-xs text-muted">
                       {v.year}년식 · {v.mileage.toLocaleString("ko-KR")} km
+                      {v.plate_number ? ` · ${v.plate_number}` : ""}
                     </p>
                   </div>
                   {active && <Badge tone="success">선택됨</Badge>}
