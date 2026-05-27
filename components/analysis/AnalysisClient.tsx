@@ -107,7 +107,15 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "분석에 실패했습니다");
+        const base = data?.error ?? `분석에 실패했습니다 (HTTP ${res.status})`;
+        const detail = data?.detail
+          ? ` — ${data.detail}`
+          : data?.issues
+            ? ` — ${Object.entries(data.issues)
+                .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+                .join(" / ")}`
+            : "";
+        setError(base + detail);
         return;
       }
       setResult(data as AnalysisResult);
