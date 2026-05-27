@@ -33,26 +33,15 @@ const schema = z.object({
     .string()
     .regex(/^(\d{4}-\d{2}-\d{2})?$/, "YYYY-MM-DD")
     .optional(),
-  fuel_type: z.enum(["", "gasoline", "diesel", "hybrid", "ev", "lpg"]),
-  transmission: z.enum(["", "auto", "manual"]),
+  fuel_type: z.string().optional(),
+  transmission: z.string().optional(),
   color: z.string().optional(),
   interior_color: z.string().optional(),
   plate_number: z.string().optional(),
   vin: z.string().optional(),
   displacement_cc: z.string().regex(/^\d*$/, "숫자만").optional(),
-  body_type: z.enum([
-    "",
-    "sedan",
-    "suv",
-    "hatchback",
-    "coupe",
-    "wagon",
-    "van",
-    "pickup",
-    "convertible",
-    "other",
-  ]),
-  vehicle_class: z.enum(["", "passenger", "van", "truck", "special"]),
+  body_type: z.string().optional(),
+  vehicle_class: z.string().optional(),
   engine_code: z.string().optional(),
   inspection_valid_until: z
     .string()
