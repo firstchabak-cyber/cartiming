@@ -25,7 +25,9 @@ export default async function NotificationsPage() {
   const { data: notifications } = user
     ? await supabase
         .from("notifications")
-        .select("id, vehicle_id, type, title, message, read_at, created_at")
+        .select(
+          "id, vehicle_id, type, title, message, read_at, created_at, vehicles(plate_number)",
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50)
@@ -71,6 +73,21 @@ export default async function NotificationsPage() {
                     <div className="flex items-start gap-3">
                       <Icon className="mt-0.5 h-5 w-5 text-primary" />
                       <div className="flex-1">
+                        {(() => {
+                          const plate = (
+                            n as unknown as {
+                              vehicles?: { plate_number?: string | null } | null;
+                            }
+                          ).vehicles?.plate_number;
+                          if (plate) {
+                            return (
+                              <span className="mb-1 inline-block rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                                {plate}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-sm">{n.title}</CardTitle>
                           <Badge tone={meta.tone}>{meta.label}</Badge>
