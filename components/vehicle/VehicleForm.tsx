@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller, type Control } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -136,6 +136,7 @@ export function VehicleForm(props: Props) {
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -450,12 +451,12 @@ export function VehicleForm(props: Props) {
             error={errors.year?.message}
             {...register("year")}
           />
-          <Input
+          <NumberInput
+            name="mileage"
+            control={control}
             label="주행거리 (km)"
-            placeholder="40000"
-            inputMode="numeric"
+            placeholder="40,000"
             error={errors.mileage?.message}
-            {...register("mileage")}
           />
         </section>
 
@@ -483,12 +484,12 @@ export function VehicleForm(props: Props) {
               placeholder="11~17자"
               {...register("vin")}
             />
-            <Input
+            <NumberInput
+              name="displacement_cc"
+              control={control}
               label="배기량 (cc)"
-              inputMode="numeric"
-              placeholder="2497"
+              placeholder="2,497"
               error={errors.displacement_cc?.message}
-              {...register("displacement_cc")}
             />
             <Input
               label="원동기 형식"
@@ -618,12 +619,12 @@ export function VehicleForm(props: Props) {
               원리금 균등상환 기준으로 잔액과 매각 시 순수령액을 계산합니다.
               원금·실행일·기간·금리 4개를 모두 입력해야 적용됩니다.
             </p>
-            <Input
+            <NumberInput
+              name="loan_principal"
+              control={control}
               label="대출 원금 (원)"
-              inputMode="numeric"
-              placeholder="20000000"
+              placeholder="20,000,000"
               error={errors.loan_principal?.message}
-              {...register("loan_principal")}
             />
             <Input
               label="대출 실행일 (YYYY-MM-DD)"
@@ -691,6 +692,50 @@ function CollapsibleHeader({
         <ChevronDown className="h-4 w-4" />
       )}
     </button>
+  );
+}
+
+type NumberInputProps = {
+  name: "mileage" | "displacement_cc" | "loan_principal";
+  control: Control<FormValues>;
+  label: string;
+  placeholder?: string;
+  error?: string;
+};
+
+function NumberInput({
+  name,
+  control,
+  label,
+  placeholder,
+  error,
+}: NumberInputProps) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => {
+        const digits = String(field.value ?? "").replace(/[^0-9]/g, "");
+        const display = digits
+          ? new Intl.NumberFormat("ko-KR").format(Number(digits))
+          : "";
+        return (
+          <Input
+            label={label}
+            placeholder={placeholder}
+            inputMode="numeric"
+            value={display}
+            onChange={(e) =>
+              field.onChange(e.target.value.replace(/[^0-9]/g, ""))
+            }
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
+            error={error}
+          />
+        );
+      }}
+    />
   );
 }
 
