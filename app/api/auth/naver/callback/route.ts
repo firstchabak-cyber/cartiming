@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { exchangeNaverCode, fetchNaverProfile } from "@/lib/auth/naver";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,9 @@ export async function GET(request: Request) {
   const oauthError = searchParams.get("error");
 
   if (oauthError || !code || !state) {
-    return NextResponse.redirect(`${origin}/login?error=naver_failed`);
+    return NextResponse.redirect(
+      `${origin}/login?error=naver_failed&reason=missing_code_or_state`,
+    );
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
@@ -35,7 +37,13 @@ export async function GET(request: Request) {
 
     const admin = createAdminClient();
 
-    const { data: list } = await admin.auth.admin.listUsers();
+    const { data: list, error: listError } = await admin.auth.admin.listUsers();
+    if (listError) {
+      console.error("Naver listUsers failed", listError);
+      return NextResponse.redirect(
+        `${origin}/login?error=naver_failed&reason=list_users`,
+      );
+    }
     const existing = list?.users?.find(
       (u: { email?: string | null }) => u.email === profile.email,
     );
@@ -53,7 +61,9 @@ export async function GET(request: Request) {
       });
       if (createError) {
         console.error("Naver user create failed", createError);
-        return NextResponse.redirect(`${origin}/login?error=naver_failed`);
+        return NextResponse.redirect(
+          `${origin}/login?error=naver_failed&reason=create_user`,
+        );
       }
     }
 
@@ -61,19 +71,34 @@ export async function GET(request: Request) {
       await admin.auth.admin.generateLink({
         type: "magiclink",
         email: profile.email,
-        options: {
-          redirectTo: `${origin}/auth/callback?next=/dashboard`,
-        },
       });
 
-    if (linkError || !linkData?.properties?.action_link) {
+    if (linkError || !linkData?.properties?.hashed_token) {
       console.error("Naver magic link gen failed", linkError);
-      return NextResponse.redirect(`${origin}/login?error=naver_session`);
+      return NextResponse.redirect(
+        `${origin}/login?error=naver_session&reason=gen_link`,
+      );
     }
 
-    return NextResponse.redirect(linkData.properties.action_link);
+    const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: "magiclink",
+    });
+
+    if (verifyError) {
+      console.error("Naver verifyOtp failed", verifyError);
+      return NextResponse.redirect(
+        `${origin}/login?error=naver_session&reason=verify_otp&msg=${encodeURIComponent(verifyError.message)}`,
+      );
+    }
+
+    return NextResponse.redirect(`${origin}/dashboard`);
   } catch (err) {
     console.error("Naver login error", err);
-    return NextResponse.redirect(`${origin}/login?error=naver_failed`);
+    const msg = err instanceof Error ? err.message : "unknown";
+    return NextResponse.redirect(
+      `${origin}/login?error=naver_failed&reason=exception&msg=${encodeURIComponent(msg)}`,
+    );
   }
 }
