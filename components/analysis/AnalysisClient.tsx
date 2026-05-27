@@ -411,6 +411,29 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
               </table>
             </div>
           </Card>
+
+          <Card className="flex flex-col gap-2 border-warning/30 bg-warning/5">
+            <p className="text-sm font-semibold text-foreground">
+              ⚠️ 시세 안내
+            </p>
+            <ul className="list-disc space-y-1 pl-5 text-xs text-muted">
+              <li>
+                위 금액은 <strong>업자 매입가</strong> 기준입니다 (딜러가 차주로부터
+                매입하는 도매 시점 가격).
+              </li>
+              <li>
+                일반 중고차 소매 시세(엔카·KB차차차 등) 보다 통상{" "}
+                <strong>10~15% 낮은 금액</strong> 으로 추정되어 있습니다.
+              </li>
+              <li>
+                실제 매각 금액은 <strong>매각 시기·매수자(개인/딜러)·차량 상태</strong>{" "}
+                에 따라 달라질 수 있습니다.
+              </li>
+              <li>
+                AI 추정값이므로 정확한 시세는 복수의 견적을 받아 비교하시기를 권장합니다.
+              </li>
+            </ul>
+          </Card>
         </>
       )}
     </div>

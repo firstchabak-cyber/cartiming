@@ -14,7 +14,7 @@ export default async function GaragePage() {
   const { data: vehicles } = user
     ? await supabase
         .from("vehicles")
-        .select("id, manufacturer, model, year, mileage, trim")
+        .select("id, manufacturer, model, year, mileage, trim, plate_number")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
     : { data: null };
@@ -45,6 +45,7 @@ export default async function GaragePage() {
                     </CardTitle>
                     <CardDescription>
                       {v.year}년식 · {formatMileage(v.mileage)}
+                      {v.plate_number ? ` · ${v.plate_number}` : ""}
                     </CardDescription>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted" />

@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const { data: vehicles } = user
     ? await supabase
         .from("vehicles")
-        .select("id, manufacturer, model, trim, year, mileage")
+        .select("id, manufacturer, model, trim, year, mileage, plate_number")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(3)
@@ -56,6 +56,7 @@ export default async function DashboardPage() {
                         </p>
                         <p className="text-xs text-muted">
                           {v.year}년식 · {formatMileage(v.mileage)}
+                          {v.plate_number ? ` · ${v.plate_number}` : ""}
                         </p>
                       </div>
                     </div>

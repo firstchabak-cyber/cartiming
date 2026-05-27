@@ -186,7 +186,13 @@ export async function POST(request: Request) {
       ? vehicle.options.join(", ")
       : "정보 없음";
 
-  const prompt = `대한민국 중고차 시장에서 아래 차량의 시세를 분석해 주세요.
+  const prompt = `대한민국 중고차 시장에서 아래 차량의 **업자 매입가 (딜러가 매수자로부터 매입하는 시점의 도매가)** 를 분석해 주세요.
+
+가격 기준 원칙 (중요):
+- 모든 가격(current_price 및 predicted_*)은 **업자 매입가** 기준입니다.
+- 일반인이 보는 엔카/KB차차차 등의 중고차 소매 시세보다 통상 10~15% 낮은 금액으로 추정하세요.
+- rationale 에서 이 가격이 "업자 매입가" 임을 명시해 주세요.
+
 
 차량 정보:
 - 제조사: ${vehicle.manufacturer}
