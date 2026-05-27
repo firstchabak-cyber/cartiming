@@ -519,16 +519,23 @@ function ShareButton({
           ? `${vehicle.manufacturer} ${vehicle.model}${vehicle.trim ? " " + vehicle.trim : ""}`
           : "내 차량";
     const signalLabel = SIGNAL_META[result.signal].label;
+    const headlineByTone: Record<AnalysisResult["signal"], string> = {
+      sell_now: "📢 지금이 매각 적기래요!",
+      review: "🔍 매각 시점 다시 봐야겠어요",
+      hold: "🤝 당분간 보유 권장이래요",
+    };
     const lines = [
+      headlineByTone[result.signal],
+      "",
       `🚗 ${name}`,
-      `💰 현재 시세 (업자 매입가): ${formatKRW(result.current_price)}`,
-      `📊 매각 권고: ${signalLabel}`,
-      `📅 1개월: ${formatKRW(result.predicted_1m)} / 3개월: ${formatKRW(result.predicted_3m)} / 6개월: ${formatKRW(result.predicted_6m)} / 1년: ${formatKRW(result.predicted_1y)}`,
+      `💰 업자 매입가 ${formatKRW(result.current_price)} · 매각 권고: ${signalLabel}`,
+      `📅 1개월 ${formatKRW(result.predicted_1m)} → 3개월 ${formatKRW(result.predicted_3m)} → 6개월 ${formatKRW(result.predicted_6m)} → 1년 ${formatKRW(result.predicted_1y)}`,
     ];
     if (result.loan) {
-      lines.push(`🏦 현재 대출 잔액: ${formatKRW(result.loan.balances.now)}`);
       const net = result.current_price - result.loan.balances.now;
-      lines.push(`💵 매각 시 순수령액: ${formatKRW(net)}`);
+      lines.push(
+        `🏦 대출 잔액 ${formatKRW(result.loan.balances.now)} · 매각 시 순수령액 ${formatKRW(net)}`,
+      );
     }
     if (result.rationale && result.rationale.trim().length > 0) {
       lines.push("");
@@ -536,8 +543,13 @@ function ShareButton({
       lines.push(result.rationale.trim());
     }
     lines.push("");
-    lines.push("— cartiming 시세 분석");
-    lines.push("https://cartiming.vercel.app");
+    lines.push("─────────────────");
+    lines.push("🤖 내 차 시세, AI 가 분석해주는 카타이밍");
+    lines.push("✅ 차량번호·등록증 사진만 있으면 1분 분석");
+    lines.push("✅ 헤이딜러 견적 수준의 업자 매입가 추정");
+    lines.push("✅ 매각 적기 자동 알림 (무료)");
+    lines.push("");
+    lines.push("👉 무료 시작: https://cartiming.vercel.app");
     return lines.join("\n");
   };
 
