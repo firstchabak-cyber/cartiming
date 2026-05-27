@@ -19,7 +19,7 @@ export default async function VehicleEditPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, registered_at, fuel_type, transmission, color, plate_number, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, registered_at, fuel_type, transmission, color, interior_color, plate_number, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)

@@ -25,6 +25,7 @@ export type LookupResult = {
     vehicle_class?: "passenger" | "van" | "truck" | "special";
     engine_code?: string;
     color?: string;
+    interior_color?: string;
     options?: string[];
     plate_number?: string;
   };

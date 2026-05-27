@@ -36,6 +36,7 @@ const schema = z.object({
   fuel_type: z.enum(["", "gasoline", "diesel", "hybrid", "ev", "lpg"]),
   transmission: z.enum(["", "auto", "manual"]),
   color: z.string().optional(),
+  interior_color: z.string().optional(),
   plate_number: z.string().optional(),
   vin: z.string().optional(),
   displacement_cc: z.string().regex(/^\d*$/, "숫자만").optional(),
@@ -84,6 +85,7 @@ export type VehicleFormDefaults = {
   fuel_type?: string | null;
   transmission?: string | null;
   color?: string | null;
+  interior_color?: string | null;
   plate_number?: string | null;
   vin?: string | null;
   displacement_cc?: number | null;
@@ -131,6 +133,13 @@ export function VehicleForm(props: Props) {
     text: string;
   } | null>(null);
 
+  // 등록증 사진 업로드
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageMsg, setImageMsg] = useState<{
+    tone: "info" | "warn" | "error";
+    text: string;
+  } | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -148,6 +157,7 @@ export function VehicleForm(props: Props) {
       fuel_type: (v?.fuel_type as FormValues["fuel_type"]) ?? "",
       transmission: (v?.transmission as FormValues["transmission"]) ?? "",
       color: v?.color ?? "",
+      interior_color: v?.interior_color ?? "",
       plate_number: v?.plate_number ?? "",
       vin: v?.vin ?? "",
       displacement_cc:
@@ -246,6 +256,109 @@ export function VehicleForm(props: Props) {
     }
   };
 
+  const applyImageLookup = async (file: File) => {
+    setImageBusy(true);
+    setImageMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch("/api/vehicles/lookup-from-image", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setImageMsg({
+          tone: "error",
+          text: data?.error ?? "분석에 실패했습니다",
+        });
+        return;
+      }
+      const vv = (data.vehicle ?? {}) as LookupVehicle;
+      const filled: string[] = [];
+      if (vv.manufacturer) {
+        setValue("manufacturer", vv.manufacturer, { shouldValidate: true });
+        filled.push("제조사");
+      }
+      if (vv.model) {
+        setValue("model", vv.model, { shouldValidate: true });
+        filled.push("모델");
+      }
+      if (vv.year) {
+        setValue("year", String(vv.year), { shouldValidate: true });
+        filled.push("연식");
+      }
+      if (vv.fuel_type) {
+        setValue("fuel_type", vv.fuel_type);
+        filled.push("연료");
+      }
+      if (vv.transmission) {
+        setValue("transmission", vv.transmission);
+      }
+      if (vv.displacement_cc) {
+        setValue("displacement_cc", String(vv.displacement_cc));
+        filled.push("배기량");
+      }
+      if (vv.body_type) {
+        setValue("body_type", vv.body_type);
+        filled.push("차체");
+      }
+      if (vv.vehicle_class) {
+        setValue("vehicle_class", vv.vehicle_class);
+        filled.push("차종");
+      }
+      if (vv.engine_code) {
+        setValue("engine_code", vv.engine_code);
+        filled.push("원동기형식");
+      }
+      if (vv.color) {
+        setValue("color", vv.color);
+        filled.push("외장색상");
+      }
+      if (vv.plate_number) {
+        setValue("plate_number", vv.plate_number);
+        setLookupPlate(vv.plate_number);
+        filled.push("번호판");
+      }
+      const extra = (data.extra ?? {}) as {
+        registered_at?: string | null;
+        seating_capacity?: number | null;
+        vin?: string | null;
+      };
+      if (extra.registered_at) {
+        setValue("registered_at", extra.registered_at);
+        filled.push("등록일");
+      }
+      if (extra.seating_capacity) {
+        setValue("seating_capacity", String(extra.seating_capacity));
+        filled.push("승차정원");
+      }
+      if (extra.vin) {
+        setValue("vin", extra.vin);
+        filled.push("차대번호");
+      }
+      setRegOpen(true);
+      if (filled.length === 0) {
+        setImageMsg({
+          tone: "warn",
+          text: "등록증에서 정보를 거의 읽지 못했습니다. 사진을 더 또렷하게 다시 찍어주세요.",
+        });
+      } else {
+        setImageMsg({
+          tone: "info",
+          text: `등록증에서 ${filled.length}개 항목을 채웠습니다 (${filled.join(", ")}). 외장/내장 색상, 트림, 옵션은 직접 입력해주세요.`,
+        });
+      }
+    } catch {
+      setImageMsg({
+        tone: "error",
+        text: "네트워크 오류로 분석에 실패했습니다",
+      });
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
 
@@ -284,6 +397,8 @@ export function VehicleForm(props: Props) {
       fuel_type: values.fuel_type || (isEdit ? null : undefined),
       transmission: values.transmission || (isEdit ? null : undefined),
       color: values.color?.trim() || (isEdit ? null : undefined),
+      interior_color:
+        values.interior_color?.trim() || (isEdit ? null : undefined),
       plate_number: values.plate_number?.trim() || (isEdit ? null : undefined),
       vin: values.vin?.trim() || (isEdit ? null : undefined),
       displacement_cc: values.displacement_cc
@@ -348,8 +463,50 @@ export function VehicleForm(props: Props) {
   return (
     <Card>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {/* 차량번호 자동조회 */}
+        {/* 차량등록증 사진으로 자동 채우기 */}
         <section className="flex flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <p className="text-sm font-semibold text-foreground">
+            차량등록증 사진으로 자동 채우기
+          </p>
+          <p className="text-xs text-muted">
+            등록증을 촬영하거나 사진을 업로드하면 제조사·모델·연식·연료·배기량·차대번호·번호판
+            등을 AI 가 읽어서 채워드립니다. 외장/내장 색상, 트림, 옵션은 직접 입력하세요.
+          </p>
+          <label className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-dashed border-primary/40 bg-background px-3 text-sm font-medium text-primary hover:bg-primary/5">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              className="hidden"
+              disabled={imageBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) applyImageLookup(f);
+                e.target.value = "";
+              }}
+            />
+            {imageBusy ? "분석 중... 잠시만요" : "📷 등록증 사진 선택/촬영"}
+          </label>
+          <p className="text-[11px] text-muted">
+            ⚠️ 사진은 Google AI 처리 과정에서만 사용되고 서버에 저장되지 않습니다.
+            소유자 이름·주소가 우려되면 그 부분을 가리고 촬영해도 됩니다.
+          </p>
+          {imageMsg && (
+            <p
+              className={
+                imageMsg.tone === "error"
+                  ? "text-xs text-danger"
+                  : imageMsg.tone === "warn"
+                    ? "text-xs text-warning"
+                    : "text-xs text-success"
+              }
+            >
+              {imageMsg.text}
+            </p>
+          )}
+        </section>
+
+        {/* 차량번호 자동조회 */}
+        <section className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
           <p className="text-sm font-semibold text-foreground">
             차량번호로 자동 채우기
           </p>
@@ -507,15 +664,14 @@ export function VehicleForm(props: Props) {
               {...register("seating_capacity")}
             />
             <Input
-              label="검사 유효기간 (YYYY-MM-DD)"
-              placeholder="2026-09-30"
-              error={errors.inspection_valid_until?.message}
-              {...register("inspection_valid_until")}
+              label="외장 색상"
+              placeholder="예) 어비스 블랙 펄"
+              {...register("color")}
             />
             <Input
-              label="색상"
-              placeholder="예) 검정"
-              {...register("color")}
+              label="내장 색상"
+              placeholder="예) 블랙 모노톤, 베이지 투톤"
+              {...register("interior_color")}
             />
             <Input
               label="번호판"

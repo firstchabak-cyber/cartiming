@@ -15,6 +15,7 @@ const vehicleSchema = z.object({
   fuel_type: z.enum(["gasoline", "diesel", "hybrid", "ev", "lpg"]).optional(),
   transmission: z.enum(["auto", "manual"]).optional(),
   color: z.string().trim().min(1).optional(),
+  interior_color: z.string().trim().min(1).optional(),
   plate_number: z.string().trim().min(1).optional(),
   registered_at: z
     .string()
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
       fuel_type: input.fuel_type ?? null,
       transmission: input.transmission ?? null,
       color: input.color ?? null,
+      interior_color: input.interior_color ?? null,
       plate_number: input.plate_number ?? null,
       registered_at: registeredAt,
       vin: input.vin ?? null,

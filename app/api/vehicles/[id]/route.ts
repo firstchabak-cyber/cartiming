@@ -24,6 +24,7 @@ const patchSchema = z
       .optional(),
     transmission: z.enum(["auto", "manual"]).nullable().optional(),
     color: z.string().trim().min(1).nullable().optional(),
+    interior_color: z.string().trim().min(1).nullable().optional(),
     plate_number: z.string().trim().min(1).nullable().optional(),
     vin: z.string().trim().min(11).max(17).nullable().optional(),
     displacement_cc: z.number().int().positive().nullable().optional(),
