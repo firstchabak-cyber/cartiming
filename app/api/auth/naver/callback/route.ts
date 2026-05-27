@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { exchangeNaverCode, fetchNaverProfile } from "@/lib/auth/naver";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -61,25 +61,17 @@ export async function GET(request: Request) {
       await admin.auth.admin.generateLink({
         type: "magiclink",
         email: profile.email,
+        options: {
+          redirectTo: `${origin}/auth/callback?next=/dashboard`,
+        },
       });
 
-    if (linkError || !linkData?.properties?.hashed_token) {
+    if (linkError || !linkData?.properties?.action_link) {
       console.error("Naver magic link gen failed", linkError);
       return NextResponse.redirect(`${origin}/login?error=naver_session`);
     }
 
-    const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: linkData.properties.hashed_token,
-      type: "magiclink",
-    });
-
-    if (verifyError) {
-      console.error("Naver verifyOtp failed", verifyError);
-      return NextResponse.redirect(`${origin}/login?error=naver_session`);
-    }
-
-    return NextResponse.redirect(`${origin}/dashboard`);
+    return NextResponse.redirect(linkData.properties.action_link);
   } catch (err) {
     console.error("Naver login error", err);
     return NextResponse.redirect(`${origin}/login?error=naver_failed`);
