@@ -139,9 +139,24 @@ export function buildAnalysisPrompt(args: {
   vehicle: VehicleForPrompt;
   maintenance: MaintenanceRecord[];
   ctx: PromptContext;
+  today?: string;
 }): string {
   const { vehicle, maintenance, ctx } = args;
   const { loan, balances, monthly } = ctx;
+  const today = args.today ?? new Date().toISOString().slice(0, 10);
+
+  // 차령 계산 (오늘 − 최초 등록일, 개월 단위)
+  let ageMonthsText = "정보 없음";
+  if (vehicle.registered_at) {
+    const reg = new Date(vehicle.registered_at);
+    const now = new Date(today);
+    if (!isNaN(reg.getTime())) {
+      const months =
+        (now.getFullYear() - reg.getFullYear()) * 12 +
+        (now.getMonth() - reg.getMonth());
+      ageMonthsText = `${months}개월 (${(months / 12).toFixed(1)}년)`;
+    }
+  }
 
   const accidentCount = maintenance.filter((r) => r.category === "사고").length;
   const repairCount = maintenance.filter((r) =>
@@ -226,6 +241,8 @@ export function buildAnalysisPrompt(args: {
 
   return `당신은 대한민국 중고차 시장 전문가입니다. 아래 차량의 **업자 매입가** (딜러가 차주로부터 매입하는 시점의 도매 가격) 를 추정하고 매각 의사결정 가이드를 만들어 주세요.
 
+**오늘 날짜: ${today}** (모든 차령·시점 계산은 이 날짜 기준)
+
 [가격 기준 — 절대 원칙]
 - current_price 와 predicted_* 모든 숫자는 **업자 매입가 기준** 입니다.
 - 엔카·KB차차차 등 소매 광고가에서 **반드시 10~15% 차감** 한 도매 가격으로 산정하세요.
@@ -258,8 +275,9 @@ ${loan ? "- 대출 잔액이 있는 차량입니다. 시점별 잔액과 대조�
 - 모델: ${vehicle.model}
 - 트림: ${vehicle.trim ?? "정보 없음"} (트림에 따른 옵션·등급 차이를 반영)
 - 연식 (모델 연도, 식별용): ${vehicle.year}년
-- 최초 등록일 (⚠️ 차령 계산 기준): ${vehicle.registered_at ?? "정보 없음"}
-  → 감가 산정 시 "오늘 − 최초 등록일" 을 차령으로 사용하세요. 연식이 아니라 등록일이 기준입니다.
+- 최초 등록일: ${vehicle.registered_at ?? "정보 없음"}
+- **차령 (오늘 ${today} 기준): ${ageMonthsText}**
+  → 위 차령 값을 그대로 사용해서 감가 산정하세요. 직접 계산하거나 추측하지 마세요.
 - 주행거리: ${vehicle.mileage} km (연 1.5~2만 km 기준선 대비 +/- 보정)
 - 연료: ${vehicle.fuel_type ?? "정보 없음"}
 - 변속기: ${vehicle.transmission ?? "정보 없음"}
