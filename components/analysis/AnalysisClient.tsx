@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Share2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -239,9 +240,15 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
           <Card className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <CardTitle>현재 시세</CardTitle>
-              <Badge tone={SIGNAL_META[result.signal].tone}>
-                {SIGNAL_META[result.signal].label}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge tone={SIGNAL_META[result.signal].tone}>
+                  {SIGNAL_META[result.signal].label}
+                </Badge>
+                <ShareButton
+                  vehicle={vehicles.find((v) => v.id === selectedId) ?? null}
+                  result={result}
+                />
+              </div>
             </div>
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-2xl font-bold text-foreground">
@@ -491,5 +498,80 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
         </>
       )}
     </div>
+  );
+}
+
+function ShareButton({
+  vehicle,
+  result,
+}: {
+  vehicle: VehicleOption | null;
+  result: AnalysisResult;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const buildText = () => {
+    const name =
+      vehicle?.plate_number
+        ? `[${vehicle.plate_number}] ${vehicle.manufacturer} ${vehicle.model}${vehicle.trim ? " " + vehicle.trim : ""}`
+        : vehicle
+          ? `${vehicle.manufacturer} ${vehicle.model}${vehicle.trim ? " " + vehicle.trim : ""}`
+          : "내 차량";
+    const signalLabel = SIGNAL_META[result.signal].label;
+    const lines = [
+      `🚗 ${name}`,
+      `💰 현재 시세 (업자 매입가): ${formatKRW(result.current_price)}`,
+      `📊 매각 권고: ${signalLabel}`,
+      `📅 1개월: ${formatKRW(result.predicted_1m)} / 3개월: ${formatKRW(result.predicted_3m)} / 6개월: ${formatKRW(result.predicted_6m)} / 1년: ${formatKRW(result.predicted_1y)}`,
+    ];
+    if (result.loan) {
+      lines.push(`🏦 현재 대출 잔액: ${formatKRW(result.loan.balances.now)}`);
+      const net = result.current_price - result.loan.balances.now;
+      lines.push(`💵 매각 시 순수령액: ${formatKRW(net)}`);
+    }
+    lines.push("");
+    lines.push("— cartiming 시세 분석");
+    lines.push("https://cartiming.vercel.app");
+    return lines.join("\n");
+  };
+
+  const handleShare = async () => {
+    const text = buildText();
+    // 모바일/지원 브라우저: 네이티브 공유 시트
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function"
+    ) {
+      try {
+        await navigator.share({
+          title: "cartiming 시세 분석",
+          text,
+        });
+        return;
+      } catch {
+        // 사용자 취소 등 — 무시
+      }
+    }
+    // 데스크톱/미지원: 클립보드 복사
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // 클립보드 권한 없으면 prompt 로 표시
+      window.prompt("복사하세요:", text);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className="flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+      aria-label="공유"
+    >
+      <Share2 className="h-3.5 w-3.5" />
+      {copied ? "복사됨" : "공유"}
+    </button>
   );
 }
