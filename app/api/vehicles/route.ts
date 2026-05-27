@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getVehicleSlots, spendCredits } from "@/lib/credits/server";
+import { CREDIT_COSTS } from "@/lib/credits/constants";
 
 const vehicleSchema = z.object({
   manufacturer: z.string().trim().min(1, "제조사를 입력해주세요"),
@@ -78,6 +80,29 @@ export async function POST(request: Request) {
 
   const input = parsed.data;
   const registeredAt = input.registered_at ?? `${input.year}-01-01`;
+
+  // 무료 슬롯 체크 — 초과하면 캐시 차감
+  const slots = await getVehicleSlots(user.id);
+  if (!slots.canAddFree) {
+    const spend = await spendCredits({
+      amount: CREDIT_COSTS.addVehicle,
+      type: "add_vehicle",
+      description: `차량 추가 등록 (${slots.activeCount + 1}대째)`,
+    });
+    if (!spend.ok) {
+      return NextResponse.json(
+        {
+          error:
+            spend.reason === "insufficient_credits"
+              ? `무료 차량 슬롯 ${slots.freeSlots}대를 모두 사용했습니다. 추가 등록은 ${CREDIT_COSTS.addVehicle} 캐시가 필요해요.`
+              : spend.message,
+          code: spend.reason,
+          required: CREDIT_COSTS.addVehicle,
+        },
+        { status: 402 },
+      );
+    }
+  }
 
   const { data, error } = await supabase
     .from("vehicles")

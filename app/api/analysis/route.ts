@@ -10,6 +10,11 @@ import {
   type VehicleForPrompt,
   type MaintenanceRecord,
 } from "@/lib/analysis/prompt";
+import {
+  getMonthlyAnalysisCount,
+  spendCredits,
+} from "@/lib/credits/server";
+import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
 
 const requestSchema = z.object({
   vehicleId: z.string().uuid(),
@@ -109,6 +114,31 @@ export async function POST(request: Request) {
             }
           : null,
       });
+    }
+  }
+
+  // 무료 5회 초과 시 캐시 차감
+  const usedThisMonth = await getMonthlyAnalysisCount(user.id);
+  const isFreeAnalysis = usedThisMonth < FREE_ANALYSIS_PER_MONTH;
+  if (!isFreeAnalysis) {
+    const spend = await spendCredits({
+      amount: CREDIT_COSTS.analysisOverage,
+      type: "analysis_overage",
+      description: `시세 분석 추가 (${usedThisMonth + 1}회차)`,
+      refId: vehicle.id,
+    });
+    if (!spend.ok) {
+      return NextResponse.json(
+        {
+          error:
+            spend.reason === "insufficient_credits"
+              ? `이번 달 무료 분석 ${FREE_ANALYSIS_PER_MONTH}회를 모두 사용했습니다. 추가 분석은 ${CREDIT_COSTS.analysisOverage} 캐시가 필요해요.`
+              : spend.message,
+          code: spend.reason,
+          required: CREDIT_COSTS.analysisOverage,
+        },
+        { status: 402 },
+      );
     }
   }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationBell } from "./NotificationBell";
+import { CreditsBadge } from "./CreditsBadge";
 import { APP_NAME } from "@/lib/constants/app";
 
 type HeaderProps = {
@@ -17,7 +18,8 @@ export function Header({ title }: HeaderProps) {
         <Link href="/dashboard" className="text-lg font-bold text-primary">
           {title ?? APP_NAME}
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <CreditsBadge />
           <NotificationBell />
           <ThemeToggle />
         </div>
