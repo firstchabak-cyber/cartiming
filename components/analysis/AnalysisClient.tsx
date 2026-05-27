@@ -529,6 +529,11 @@ function ShareButton({
       const net = result.current_price - result.loan.balances.now;
       lines.push(`💵 매각 시 순수령액: ${formatKRW(net)}`);
     }
+    if (result.rationale && result.rationale.trim().length > 0) {
+      lines.push("");
+      lines.push("📝 분석 내용");
+      lines.push(result.rationale.trim());
+    }
     lines.push("");
     lines.push("— cartiming 시세 분석");
     lines.push("https://cartiming.vercel.app");
