@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { CAR_BODY_PARTS, DAMAGE_STATES } from "@/lib/constants/damage";
 
 const patchSchema = z
   .object({
@@ -62,6 +63,12 @@ const patchSchema = z
       .optional(),
     loan_months: z.number().int().gte(1).lte(240).nullable().optional(),
     loan_apr: z.number().gte(0).lte(30).nullable().optional(),
+    damage_map: z
+      .record(
+        z.enum(CAR_BODY_PARTS as unknown as [string, ...string[]]),
+        z.enum(DAMAGE_STATES as unknown as [string, ...string[]]),
+      )
+      .optional(),
   })
   .refine((v) => Object.keys(v).length > 0, {
     message: "수정할 항목이 없습니다",

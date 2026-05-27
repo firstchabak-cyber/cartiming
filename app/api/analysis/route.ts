@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   const { data: vehicle, error: vehicleError } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", parsed.data.vehicleId)
     .eq("user_id", user.id)
@@ -186,6 +186,44 @@ export async function POST(request: Request) {
       ? vehicle.options.join(", ")
       : "정보 없음";
 
+  // 외판 상태 정리 — 감가 반영 부위와 미반영 부위 분리
+  const damageMap =
+    vehicle.damage_map && typeof vehicle.damage_map === "object"
+      ? (vehicle.damage_map as Record<string, string>)
+      : {};
+  const NON_DEPRECIATING = new Set([
+    "앞범퍼",
+    "뒷범퍼",
+    "휠(좌앞)",
+    "휠(우앞)",
+    "휠(좌뒤)",
+    "휠(우뒤)",
+  ]);
+  const damageEntries = Object.entries(damageMap).filter(
+    ([, s]) => s && s !== "없음",
+  );
+  const countedDamage = damageEntries.filter(
+    ([part]) => !NON_DEPRECIATING.has(part),
+  );
+  const ignoredDamage = damageEntries.filter(([part]) =>
+    NON_DEPRECIATING.has(part),
+  );
+  const damageSection =
+    damageEntries.length === 0
+      ? "외판 상태: 전부 이상 없음 (무사고·무판금)"
+      : [
+          countedDamage.length > 0
+            ? `외판 상태 (감가 반영):\n${countedDamage
+                .map(([p, s]) => `- ${p}: ${s}`)
+                .join("\n")}`
+            : "외판 상태 (감가 반영): 없음",
+          ignoredDamage.length > 0
+            ? `\n외판 상태 (감가 미반영 — 앞/뒤 범퍼·휠):\n${ignoredDamage
+                .map(([p, s]) => `- ${p}: ${s}`)
+                .join("\n")}`
+            : "",
+        ].join("\n");
+
   const prompt = `대한민국 중고차 시장에서 아래 차량의 **업자 매입가 (딜러가 매수자로부터 매입하는 시점의 도매가)** 를 분석해 주세요.
 
 가격 기준 원칙 (중요):
@@ -206,6 +244,8 @@ export async function POST(request: Request) {
 - 차체 형상: ${vehicle.body_type ?? "정보 없음"}
 - 차종: ${vehicle.vehicle_class ?? "정보 없음"}
 - 추가 옵션: ${optionList}
+
+${damageSection}
 
 정비/사고 이력 (총 ${records.length}건, 사고 ${accidentCount}건 / 판금·교환·수리 ${repairCount}건):
 ${maintenanceLines}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MaintenanceForm } from "@/components/vehicle/MaintenanceForm";
+import { DamageMapEditor } from "@/components/vehicle/DamageMapEditor";
+import type { DamageMap } from "@/lib/constants/damage";
 
 export default async function NewMaintenancePage({
   params,
@@ -16,22 +17,27 @@ export default async function NewMaintenancePage({
 
   const { data: vehicle } = await supabase
     .from("vehicles")
-    .select("id, manufacturer, model")
+    .select("id, manufacturer, model, damage_map")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!vehicle) notFound();
 
+  const initial =
+    vehicle.damage_map && typeof vehicle.damage_map === "object"
+      ? (vehicle.damage_map as DamageMap)
+      : {};
+
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <h1 className="text-xl font-bold">정비/사고 이력 추가</h1>
+        <h1 className="text-xl font-bold">외판 상태 (정비/사고 이력)</h1>
         <p className="text-sm text-muted">
           {vehicle.manufacturer} {vehicle.model}
         </p>
       </header>
-      <MaintenanceForm vehicleId={vehicle.id} />
+      <DamageMapEditor vehicleId={vehicle.id} initial={initial} />
     </div>
   );
 }

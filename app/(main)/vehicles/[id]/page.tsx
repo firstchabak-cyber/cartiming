@@ -51,7 +51,7 @@ export default async function VehicleDetailPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, damage_map, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -372,22 +372,52 @@ export default async function VehicleDetailPage({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-foreground">
-            정비/사고 이력
+            외판 상태 (정비/사고)
           </h2>
           <Link href={`/vehicles/${vehicle.id}/maintenance/new`}>
             <Button size="sm">
               <Plus className="h-4 w-4" />
-              이력 추가
+              입력·수정
             </Button>
           </Link>
         </div>
+
+        {(() => {
+          const map =
+            vehicle.damage_map && typeof vehicle.damage_map === "object"
+              ? (vehicle.damage_map as Record<string, string>)
+              : {};
+          const entries = Object.entries(map).filter(([, s]) => s && s !== "없음");
+          if (entries.length === 0) return null;
+          return (
+            <Card className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                현재 입력된 외판 상태 ({entries.length}곳)
+              </p>
+              <ul className="flex flex-wrap gap-1">
+                {entries.map(([part, state]) => (
+                  <li
+                    key={part}
+                    className={
+                      state === "교환"
+                        ? "rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger"
+                        : "rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning"
+                    }
+                  >
+                    {part} · {state}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          );
+        })()}
 
         {maintenance.length === 0 ? (
           <Card className="flex flex-col items-center gap-2 py-8 text-center">
             <Wrench className="h-8 w-8 text-muted" />
             <CardDescription>
-              등록된 이력이 없습니다. 사고·정비·교환 이력을 기록해두면 매각 시
-              참고할 수 있어요.
+              아직 입력된 외판 상태가 없습니다. &quot;입력·수정&quot; 을 눌러
+              차량 도면에서 부위를 클릭하세요.
             </CardDescription>
           </Card>
         ) : (
