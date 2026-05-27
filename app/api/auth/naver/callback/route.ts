@@ -108,10 +108,34 @@ export async function GET(request: Request) {
         },
       );
       if (updateError) {
-        console.error("Naver user update failed", updateError);
-        return NextResponse.redirect(
-          `${origin}/login?error=naver_failed&reason=update_user&msg=${encodeURIComponent(updateError.message)}`,
+        const looksMissing = /not\s*found/i.test(updateError.message);
+        if (!looksMissing) {
+          console.error("Naver user update failed", updateError);
+          return NextResponse.redirect(
+            `${origin}/login?error=naver_failed&reason=update_user&msg=${encodeURIComponent(updateError.message)}`,
+          );
+        }
+        console.warn(
+          "Naver update returned not-found despite listUsers; purging and recreating",
+          existing.id,
         );
+        await admin.auth.admin
+          .deleteUser(existing.id, false)
+          .catch((e: unknown) =>
+            console.warn("phantom purge failed (ignored)", e),
+          );
+        const { error: recreateError } = await admin.auth.admin.createUser({
+          email: profile.email,
+          password,
+          email_confirm: true,
+          user_metadata: userMetadata,
+        });
+        if (recreateError) {
+          console.error("Naver user recreate failed", recreateError);
+          return NextResponse.redirect(
+            `${origin}/login?error=naver_failed&reason=recreate_user&msg=${encodeURIComponent(recreateError.message)}`,
+          );
+        }
       }
     }
 
