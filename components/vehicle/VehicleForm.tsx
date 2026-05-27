@@ -125,14 +125,6 @@ export function VehicleForm(props: Props) {
   );
   const [checkedOptions, setCheckedOptions] = useState<Set<string>>(initialOptions);
 
-  // 차량번호 자동조회
-  const [lookupPlate, setLookupPlate] = useState(v?.plate_number ?? "");
-  const [lookupBusy, setLookupBusy] = useState(false);
-  const [lookupMsg, setLookupMsg] = useState<{
-    tone: "info" | "warn" | "error";
-    text: string;
-  } | null>(null);
-
   // 등록증 사진 업로드
   const [imageBusy, setImageBusy] = useState(false);
   const [imageMsg, setImageMsg] = useState<{
@@ -186,74 +178,6 @@ export function VehicleForm(props: Props) {
       else next.add(opt);
       return next;
     });
-  };
-
-  const applyLookup = async () => {
-    const trimmed = lookupPlate.trim().replace(/\s+/g, "");
-    if (trimmed.length < 4) {
-      setLookupMsg({ tone: "error", text: "차량번호를 정확히 입력해주세요" });
-      return;
-    }
-    setLookupBusy(true);
-    setLookupMsg(null);
-    try {
-      const res = await fetch("/api/vehicles/lookup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plate: trimmed }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setLookupMsg({
-          tone: "error",
-          text: data?.error ?? "조회에 실패했습니다",
-        });
-        return;
-      }
-      const v = data.vehicle as LookupVehicle;
-      if (v.manufacturer)
-        setValue("manufacturer", v.manufacturer, { shouldValidate: true });
-      if (v.model) setValue("model", v.model, { shouldValidate: true });
-      if (v.trim) setValue("trim", v.trim);
-      if (v.year) setValue("year", String(v.year), { shouldValidate: true });
-      if (v.fuel_type) setValue("fuel_type", v.fuel_type);
-      if (v.transmission) setValue("transmission", v.transmission);
-      if (v.displacement_cc)
-        setValue("displacement_cc", String(v.displacement_cc));
-      if (v.body_type) setValue("body_type", v.body_type);
-      if (v.vehicle_class) setValue("vehicle_class", v.vehicle_class);
-      if (v.engine_code) setValue("engine_code", v.engine_code);
-      if (v.color) setValue("color", v.color);
-      if (v.plate_number) setValue("plate_number", v.plate_number);
-      if (v.options && v.options.length > 0) {
-        const matched = v.options.filter((o) => ALL_OPTIONS.includes(o));
-        setCheckedOptions(new Set(matched));
-        const extra = v.options.filter((o) => !ALL_OPTIONS.includes(o));
-        setValue("extra_options_text", extra.join(", "));
-        setOptOpen(true);
-      }
-      setRegOpen(true);
-      if (data.source === "mock") {
-        setLookupMsg({
-          tone: "warn",
-          text:
-            data.fallbackReason ??
-            "데모 데이터입니다. 실제 정보는 직접 확인·수정해주세요.",
-        });
-      } else {
-        setLookupMsg({
-          tone: "info",
-          text: "공공 API에서 조회된 정보로 채워졌습니다. 필요하면 수정하세요.",
-        });
-      }
-    } catch {
-      setLookupMsg({
-        tone: "error",
-        text: "네트워크 오류로 조회에 실패했습니다",
-      });
-    } finally {
-      setLookupBusy(false);
-    }
   };
 
   const applyImageLookup = async (file: File) => {
@@ -317,7 +241,6 @@ export function VehicleForm(props: Props) {
       }
       if (vv.plate_number) {
         setValue("plate_number", vv.plate_number);
-        setLookupPlate(vv.plate_number);
         filled.push("번호판");
       }
       const extra = (data.extra ?? {}) as {
@@ -501,46 +424,6 @@ export function VehicleForm(props: Props) {
               }
             >
               {imageMsg.text}
-            </p>
-          )}
-        </section>
-
-        {/* 차량번호 자동조회 */}
-        <section className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
-          <p className="text-sm font-semibold text-foreground">
-            차량번호로 자동 채우기
-          </p>
-          <p className="text-xs text-muted">
-            번호를 입력하고 조회하면 제조사·모델·트림·옵션까지 자동 채워집니다.
-            나머지 정보는 직접 수정·보완 가능합니다.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={lookupPlate}
-              onChange={(e) => setLookupPlate(e.target.value)}
-              placeholder="예) 12가 3456"
-              className="h-11 flex-1 rounded-xl border border-border bg-background px-3 text-base text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <Button
-              type="button"
-              onClick={applyLookup}
-              disabled={lookupBusy}
-            >
-              {lookupBusy ? "조회 중..." : "조회"}
-            </Button>
-          </div>
-          {lookupMsg && (
-            <p
-              className={
-                lookupMsg.tone === "error"
-                  ? "text-xs text-danger"
-                  : lookupMsg.tone === "warn"
-                    ? "text-xs text-warning"
-                    : "text-xs text-success"
-              }
-            >
-              {lookupMsg.text}
             </p>
           )}
         </section>
