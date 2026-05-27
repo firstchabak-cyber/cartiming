@@ -426,11 +426,22 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                 <strong>10~15% 낮은 금액</strong> 으로 추정되어 있습니다.
               </li>
               <li>
-                실제 매각 금액은 <strong>매각 시기·매수자(개인/딜러)·차량 상태</strong>{" "}
+                <strong>입력하신 외판 상태(판금/교환)</strong> 와{" "}
+                <strong>대출 잔액</strong> 이 가격·매각 권고에 반영되어 있습니다.
+                외판/대출/주행거리를 수정하면 &quot;최신 분석 요청&quot; 으로 재분석해 주세요.
+              </li>
+              <li>
+                실제 매각 금액은{" "}
+                <strong>매각 시기·매수자(개인/딜러)·차량 상태·시장 동향</strong>{" "}
                 에 따라 달라질 수 있습니다.
               </li>
               <li>
-                AI 추정값이므로 정확한 시세는 복수의 견적을 받아 비교하시기를 권장합니다.
+                <strong>침수·도난·말소·소유권 이력</strong> 은 본 분석에 포함되지 않습니다.
+                자동차365(car365.go.kr) 등 공식 채널에서 별도 확인해 주세요.
+              </li>
+              <li>
+                AI 추정값이므로 실제 매각 전 <strong>딜러 2~3곳의 견적</strong> 을 받아
+                비교하시는 것을 권장합니다.
               </li>
             </ul>
           </Card>
