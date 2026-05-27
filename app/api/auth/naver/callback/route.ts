@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { exchangeNaverCode, fetchNaverProfile } from "@/lib/auth/naver";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+function derivePassword(naverId: string): string {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  return createHash("sha256")
+    .update(`naver:${naverId}:${secret}`)
+    .digest("hex");
+}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -35,84 +43,67 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=naver_no_email`);
     }
 
+    const password = derivePassword(profile.id);
     const admin = createAdminClient();
 
     const { data: list, error: listError } = await admin.auth.admin.listUsers();
     if (listError) {
       console.error("Naver listUsers failed", listError);
       return NextResponse.redirect(
-        `${origin}/login?error=naver_failed&reason=list_users`,
+        `${origin}/login?error=naver_failed&reason=list_users&msg=${encodeURIComponent(listError.message)}`,
       );
     }
     const existing = list?.users?.find(
       (u: { email?: string | null }) => u.email === profile.email,
     );
 
+    const userMetadata = {
+      name: profile.name ?? profile.nickname,
+      avatar_url: profile.profile_image,
+      provider: "naver",
+      naver_id: profile.id,
+    };
+
     if (!existing) {
       const { error: createError } = await admin.auth.admin.createUser({
         email: profile.email,
+        password,
         email_confirm: true,
-        user_metadata: {
-          name: profile.name ?? profile.nickname,
-          avatar_url: profile.profile_image,
-          provider: "naver",
-          naver_id: profile.id,
-        },
+        user_metadata: userMetadata,
       });
       if (createError) {
         console.error("Naver user create failed", createError);
         return NextResponse.redirect(
-          `${origin}/login?error=naver_failed&reason=create_user`,
+          `${origin}/login?error=naver_failed&reason=create_user&msg=${encodeURIComponent(createError.message)}`,
+        );
+      }
+    } else {
+      const { error: updateError } = await admin.auth.admin.updateUserById(
+        existing.id,
+        {
+          password,
+          email_confirm: true,
+          user_metadata: userMetadata,
+        },
+      );
+      if (updateError) {
+        console.error("Naver user update failed", updateError);
+        return NextResponse.redirect(
+          `${origin}/login?error=naver_failed&reason=update_user&msg=${encodeURIComponent(updateError.message)}`,
         );
       }
     }
 
-    // Use "recovery" link type. For users we just created with
-    // email_confirm:true (always confirmed), Supabase routes
-    // generateLink({type:'magiclink'}) into the recovery_token column,
-    // but verifyOtp({type:'magiclink'|'email'}) reads from
-    // confirmation_token — so the token is never found. Using 'recovery'
-    // explicitly on both sides keeps them in the same column.
-    const { data: linkData, error: linkError } =
-      await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: profile.email,
-      });
-
-    if (linkError || !linkData?.properties?.hashed_token) {
-      console.error("Naver recovery link gen failed", linkError);
-      return NextResponse.redirect(
-        `${origin}/login?error=naver_session&reason=gen_link&msg=${encodeURIComponent(linkError?.message ?? "no_hashed_token")}`,
-      );
-    }
-
     const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password,
+    });
 
-    let verifyError = (
-      await supabase.auth.verifyOtp({
-        token_hash: linkData.properties.hashed_token,
-        type: "recovery",
-      })
-    ).error;
-
-    if (verifyError && linkData.properties.email_otp) {
-      console.warn(
-        "verifyOtp(token_hash, recovery) failed, retrying with email+otp",
-        verifyError.message,
-      );
-      verifyError = (
-        await supabase.auth.verifyOtp({
-          email: profile.email,
-          token: linkData.properties.email_otp,
-          type: "recovery",
-        })
-      ).error;
-    }
-
-    if (verifyError) {
-      console.error("Naver verifyOtp failed", verifyError);
+    if (signInError) {
+      console.error("Naver signInWithPassword failed", signInError);
       return NextResponse.redirect(
-        `${origin}/login?error=naver_session&reason=verify_otp&msg=${encodeURIComponent(verifyError.message)}`,
+        `${origin}/login?error=naver_session&reason=sign_in&msg=${encodeURIComponent(signInError.message)}`,
       );
     }
 
