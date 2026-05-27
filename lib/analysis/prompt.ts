@@ -216,7 +216,7 @@ export function buildAnalysisPrompt(args: {
   const plateLine = (() => {
     if (!vehicle.plate_number) return "- 번호판: 정보 없음";
     if (plateInfo.category === "rental")
-      return `- 번호판: ${vehicle.plate_number} ⚠️ **렌터카 출신** (한글 "${plateInfo.hangul}") — 시세 통상 -5~12% 감가 (주행거리/사고이력만큼 큰 요인은 아님)`;
+      return `- 번호판: ${vehicle.plate_number} ⚠️ **렌터카 출신** (한글 "${plateInfo.hangul}") — 시세 통상 -5~7% 감가 (주행거리/사고이력만큼 큰 요인은 아님)`;
     if (plateInfo.category === "commercial")
       return `- 번호판: ${vehicle.plate_number} ⚠️ **영업용·택시·배달 출신** (한글 "${plateInfo.hangul}") — 시세 통상 -15~30% 감가`;
     if (plateInfo.category === "private")
@@ -239,7 +239,7 @@ export function buildAnalysisPrompt(args: {
 4순위. 번호판 영업용 여부 — 보조 요인 (아래).
 
 [번호판 분류 — 보조 감가 요인 (1·2순위 대비 비중 작음)]
-- 렌터카 번호판 (하·호·허): 자가용 동급 대비 **-5~12%** 감가. 렌터카는 주행거리는 많아도 정기 점검을 받았기에 큰 폭 감가는 아님. 단, 같은 주행거리/연식의 자가용보다는 항상 낮은 가격.
+- 렌터카 번호판 (하·호·허): 자가용 동급 대비 **-5~7%** 감가. 렌터카는 주행거리는 많아도 정기 점검을 받았기에 큰 폭 감가는 아님. 단, 같은 주행거리/연식의 자가용보다는 항상 낮은 가격.
 - 영업용 번호판 (바·사·아·자·배): 자가용 동급 대비 **-15~30%** 감가. 택시·배달 등 가혹한 운행 환경 + 다수 운전자 이력.
 - 자가용 번호판 (기타 한글): 감가 없음.
 - 번호판 영업용 감가는 위 1·2순위(주행거리, 사고이력)의 감가와 **별도로 누적** 적용합니다 (중복 계산 X).
