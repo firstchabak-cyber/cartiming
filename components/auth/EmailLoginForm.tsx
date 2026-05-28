@@ -18,9 +18,10 @@ type FormValues = z.infer<typeof schema>;
 
 type EmailLoginFormProps = {
   mode: "login" | "signup";
+  next?: string | null;
 };
 
-export function EmailLoginForm({ mode }: EmailLoginFormProps) {
+export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
   const router = useRouter();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
@@ -31,17 +32,22 @@ export function EmailLoginForm({ mode }: EmailLoginFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+  const destination = next ?? "/dashboard";
+
   const onSubmit = handleSubmit(async (values) => {
     setErrorMsg(null);
     setInfoMsg(null);
     const supabase = createClient();
 
     if (mode === "signup") {
+      const callback = next
+        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+        : `${window.location.origin}/auth/callback`;
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callback,
         },
       });
       if (error) {
@@ -49,7 +55,7 @@ export function EmailLoginForm({ mode }: EmailLoginFormProps) {
         return;
       }
       if (data.session) {
-        router.replace("/dashboard");
+        router.replace(destination);
         router.refresh();
         return;
       }
@@ -65,7 +71,7 @@ export function EmailLoginForm({ mode }: EmailLoginFormProps) {
       setErrorMsg("로그인에 실패했습니다. 이메일/비밀번호를 확인해주세요.");
       return;
     }
-    router.replace("/dashboard");
+    router.replace(destination);
     router.refresh();
   });
 

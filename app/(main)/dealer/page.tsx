@@ -8,7 +8,7 @@ export default async function DealerIndexPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/dealer");
 
   // 딜러 등록 여부에 따라 분기
   const { data: dealer } = await supabase

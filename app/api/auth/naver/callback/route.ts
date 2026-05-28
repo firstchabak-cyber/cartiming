@@ -25,15 +25,21 @@ export async function GET(request: Request) {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const storedState = cookieHeader
-    .split(";")
-    .map((c) => c.trim())
+  const cookies = cookieHeader.split(";").map((c) => c.trim());
+  const storedState = cookies
     .find((c) => c.startsWith("naver_oauth_state="))
     ?.split("=")[1];
 
   if (!storedState || storedState !== state) {
     return NextResponse.redirect(`${origin}/login?error=naver_state`);
   }
+
+  const nextRaw = cookies
+    .find((c) => c.startsWith("naver_oauth_next="))
+    ?.split("=")[1];
+  const next = nextRaw ? decodeURIComponent(nextRaw) : null;
+  const safeNext =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   try {
     const token = await exchangeNaverCode(code, state);
@@ -152,7 +158,9 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.redirect(`${origin}/dashboard`);
+    const redirectRes = NextResponse.redirect(`${origin}${safeNext}`);
+    redirectRes.cookies.delete("naver_oauth_next");
+    return redirectRes;
   } catch (err) {
     console.error("Naver login error", err);
     const msg = err instanceof Error ? err.message : "unknown";
