@@ -178,8 +178,9 @@ export function SaleRequestForm({
       </Button>
 
       <p className="text-[11px] text-muted">
-        신청 후 카타이밍 운영자가 가입 딜러에게 매물을 전달합니다.
-        보통 1~3일 안에 입찰가가 도착하며, 알림으로 받게 됩니다.
+        신청 후 다음 화면에서 <strong>차량 사진을 추가</strong> 할 수 있습니다.
+        딜러는 사진을 보고 입찰가를 결정하므로 외관 4면 + 실내 + 휠 정도는
+        등록 권장.
       </p>
     </div>
   );

@@ -5,6 +5,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { SelectBidButton } from "@/components/sale/SelectBidButton";
+import { SalePhotoUploader } from "@/components/sale/SalePhotoUploader";
 
 const STATUS_META: Record<
   string,
@@ -52,6 +53,26 @@ export default async function SaleStatusPage({
     )
     .eq("sale_request_id", sale.id)
     .order("bid_amount", { ascending: false });
+
+  // 사진 + 서명된 URL
+  const { data: photoRows } = await supabase
+    .from("sale_photos")
+    .select("id, storage_path, sort_order")
+    .eq("sale_request_id", sale.id)
+    .order("sort_order", { ascending: true });
+  const photos = await Promise.all(
+    (photoRows ?? []).map(async (p) => {
+      const { data: signed } = await supabase.storage
+        .from("sale-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return {
+        id: p.id,
+        storage_path: p.storage_path,
+        sort_order: p.sort_order,
+        signed_url: signed?.signedUrl ?? "",
+      };
+    }),
+  );
 
   const meta = STATUS_META[sale.status] ?? STATUS_META.pending;
   const bidsList = bids ?? [];
@@ -121,6 +142,21 @@ export default async function SaleStatusPage({
           >
             거래 완료 후 차량 상세에서 "매각 완료 처리" 버튼을 눌러주세요 →
           </Link>
+        </Card>
+      )}
+
+      {(sale.status === "pending" || sale.status === "bidding") && (
+        <Card className="flex flex-col gap-3">
+          <p className="text-sm font-semibold text-foreground">
+            차량 사진 ({photos.length})
+          </p>
+          {photos.length === 0 && (
+            <p className="rounded-lg border border-warning/30 bg-warning/5 p-2 text-xs text-warning">
+              ⚠️ 사진이 1장도 없으면 딜러 입찰가가 낮을 수 있습니다.
+              외관 4면 · 실내 · 휠 정도는 등록 권장.
+            </p>
+          )}
+          <SalePhotoUploader saleRequestId={sale.id} initialPhotos={photos} />
         </Card>
       )}
 

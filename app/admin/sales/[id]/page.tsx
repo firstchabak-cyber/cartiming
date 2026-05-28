@@ -5,6 +5,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { AdminBidForm } from "@/components/admin/AdminBidForm";
+import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
 
 const STATUS_META: Record<
   string,
@@ -39,6 +40,20 @@ export default async function AdminSaleDetailPage({
     )
     .eq("id", sale.vehicle_id)
     .maybeSingle();
+
+  const { data: photoRows } = await admin
+    .from("sale_photos")
+    .select("id, storage_path")
+    .eq("sale_request_id", params.id)
+    .order("sort_order", { ascending: true });
+  const photos = await Promise.all(
+    (photoRows ?? []).map(async (p: { id: string; storage_path: string }) => {
+      const { data: signed } = await admin.storage
+        .from("sale-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return { id: p.id, signed_url: signed?.signedUrl ?? "" };
+    }),
+  );
 
   const { data: bids } = await admin
     .from("sale_bids")
@@ -174,6 +189,15 @@ export default async function AdminSaleDetailPage({
           </div>
         )}
       </Card>
+
+      {photos.length > 0 && (
+        <Card>
+          <CardTitle>차량 사진 ({photos.length})</CardTitle>
+          <div className="mt-2">
+            <SalePhotoGallery photos={photos} />
+          </div>
+        </Card>
+      )}
 
       {damageEntries.length > 0 && (
         <Card>

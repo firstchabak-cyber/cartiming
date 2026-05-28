@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { formatDate, formatMileage } from "@/lib/utils/format";
 import { DealerBidForm } from "@/components/dealer/DealerBidForm";
+import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export default async function DealerListingDetailPage({
   params,
@@ -52,6 +54,22 @@ export default async function DealerListingDetailPage({
     engine_code: string | null;
   } | null;
 
+  // 사진 (admin 클라이언트로 가져옴 — 딜러는 사진 직접 조회 권한 없음)
+  const admin = createAdminClient();
+  const { data: photoRows } = await admin
+    .from("sale_photos")
+    .select("id, storage_path")
+    .eq("sale_request_id", params.id)
+    .order("sort_order", { ascending: true });
+  const photos = await Promise.all(
+    (photoRows ?? []).map(async (p: { id: string; storage_path: string }) => {
+      const { data: signed } = await admin.storage
+        .from("sale-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return { id: p.id, signed_url: signed?.signedUrl ?? "" };
+    }),
+  );
+
   const { data: myBid } = await supabase
     .from("sale_bids")
     .select("id, bid_amount, notes, status, created_at")
@@ -88,6 +106,13 @@ export default async function DealerListingDetailPage({
           {v?.year}년식 · {formatMileage(sale.current_mileage ?? v?.mileage ?? 0)}
         </CardDescription>
       </Card>
+
+      {photos.length > 0 && (
+        <Card className="flex flex-col gap-2">
+          <CardTitle className="text-sm">차량 사진 ({photos.length})</CardTitle>
+          <SalePhotoGallery photos={photos} />
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-2">
         <CardTitle className="text-sm">차량 정보</CardTitle>
