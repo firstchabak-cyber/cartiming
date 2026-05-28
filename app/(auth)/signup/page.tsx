@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/ui/Container";
@@ -13,7 +14,7 @@ function isSafeNext(next: string | null): string | null {
   return next;
 }
 
-export default function SignupPage() {
+function SignupPageInner() {
   const searchParams = useSearchParams();
   const next = isSafeNext(searchParams.get("next"));
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
@@ -46,5 +47,13 @@ export default function SignupPage() {
         </p>
       </section>
     </Container>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <SignupPageInner />
+    </Suspense>
   );
 }

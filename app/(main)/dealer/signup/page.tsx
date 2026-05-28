@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
@@ -11,7 +12,7 @@ function isSafeNext(next: string | null): string | null {
   return next;
 }
 
-export default function DealerSignupPage() {
+function DealerSignupPageInner() {
   const searchParams = useSearchParams();
   const nextParam = isSafeNext(searchParams.get("next"));
   // 신규 가입 직후엔 사업자 정보 등록 폼으로
@@ -61,5 +62,13 @@ export default function DealerSignupPage() {
         가입 시 사업자등록증·통신판매업 신고증 보유 사업자임을 확인합니다.
       </p>
     </div>
+  );
+}
+
+export default function DealerSignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <DealerSignupPageInner />
+    </Suspense>
   );
 }

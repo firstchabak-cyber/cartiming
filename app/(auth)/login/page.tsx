@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/ui/Container";
@@ -14,7 +14,7 @@ function isSafeNext(next: string | null): string | null {
   return next;
 }
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [showEmail, setShowEmail] = useState(false);
   const searchParams = useSearchParams();
   const next = isSafeNext(searchParams.get("next"));
@@ -65,5 +65,13 @@ export default function LoginPage() {
 
       <p className="mt-auto text-center text-xs text-muted">{APP_TAGLINE}</p>
     </Container>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

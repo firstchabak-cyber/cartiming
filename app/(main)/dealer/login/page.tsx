@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
@@ -12,7 +12,7 @@ function isSafeNext(next: string | null): string | null {
   return next;
 }
 
-export default function DealerLoginPage() {
+function DealerLoginPageInner() {
   const [showEmail, setShowEmail] = useState(false);
   const searchParams = useSearchParams();
   // 딜러 로그인 후 기본 목적지는 /dealer (등록 여부에 따라 자동 라우팅됨)
@@ -67,5 +67,13 @@ export default function DealerLoginPage() {
         </Link>
       </section>
     </div>
+  );
+}
+
+export default function DealerLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <DealerLoginPageInner />
+    </Suspense>
   );
 }
