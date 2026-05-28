@@ -47,26 +47,43 @@ export default async function AdminFeesPage() {
 
   const list = (txns as FeeRow[]) ?? [];
 
-  // 각 거래의 선정 딜러 정보 + 사업자 프로필 묶기
+  // 각 거래의 선정 딜러 정보 + 사업자 프로필 묶기 (embed 안 쓰고 2단계로)
   const requestIds = list
     .map((t) => t.source_sale_request_id)
     .filter((id): id is string => !!id);
-  const { data: selectedBids } =
+  const { data: salesWithBidId } =
     requestIds.length > 0
       ? await admin
           .from("sale_requests")
-          .select(
-            "id, selected_bid:sale_bids!sale_requests_selected_bid_id_fkey(dealer_id, dealer_name)",
-          )
+          .select("id, selected_bid_id")
           .in("id", requestIds)
       : { data: null };
-  const dealerMap = new Map<string, DealerLite>();
-  for (const r of (selectedBids ?? []) as Array<{
+  const reqIdToBidId = new Map<string, string>();
+  const allBidIds: string[] = [];
+  for (const r of (salesWithBidId ?? []) as Array<{
     id: string;
-    selected_bid: DealerLite | DealerLite[] | null;
+    selected_bid_id: string | null;
   }>) {
-    const b = Array.isArray(r.selected_bid) ? r.selected_bid[0] : r.selected_bid;
-    if (b) dealerMap.set(r.id, b);
+    if (r.selected_bid_id) {
+      reqIdToBidId.set(r.id, r.selected_bid_id);
+      allBidIds.push(r.selected_bid_id);
+    }
+  }
+  const { data: bidsList } =
+    allBidIds.length > 0
+      ? await admin
+          .from("sale_bids")
+          .select("id, dealer_id, dealer_name")
+          .in("id", allBidIds)
+      : { data: null };
+  const bidIdToDealer = new Map<string, DealerLite>();
+  for (const b of (bidsList ?? []) as Array<DealerLite & { id: string }>) {
+    bidIdToDealer.set(b.id, { dealer_id: b.dealer_id, dealer_name: b.dealer_name });
+  }
+  const dealerMap = new Map<string, DealerLite>();
+  for (const [reqId, bidId] of reqIdToBidId.entries()) {
+    const dealer = bidIdToDealer.get(bidId);
+    if (dealer) dealerMap.set(reqId, dealer);
   }
 
   // 딜러 사업자 정보 (계산서 발행용)

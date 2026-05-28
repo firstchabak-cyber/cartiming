@@ -10,11 +10,6 @@ import { ReportPaymentButton } from "@/components/dealer/ReportPaymentButton";
 
 export const dynamic = "force-dynamic";
 
-type Bid = { dealer_id: string };
-type SaleReqRow = {
-  id: string;
-  selected_bid: Bid | Bid[] | null;
-};
 type FeeRow = {
   id: string;
   sold_price: number;
@@ -39,22 +34,22 @@ export default async function DealerFeesPage() {
 
   const admin = createAdminClient();
 
-  // 내가 선정된 매각 요청 ID 목록
-  const { data: myBidRequests } = await admin
-    .from("sale_requests")
-    .select(
-      "id, selected_bid:sale_bids!sale_requests_selected_bid_id_fkey(dealer_id)",
-    )
-    .not("selected_bid_id", "is", null);
+  // 1) 내가 한 모든 입찰 id 들
+  const { data: myBids } = await admin
+    .from("sale_bids")
+    .select("id")
+    .eq("dealer_id", user.id);
+  const myBidIds = (myBids ?? []).map((b: { id: string }) => b.id);
 
-  const myRequestIds = ((myBidRequests ?? []) as SaleReqRow[])
-    .filter((r) => {
-      const b = Array.isArray(r.selected_bid)
-        ? r.selected_bid[0]
-        : r.selected_bid;
-      return b?.dealer_id === user.id;
-    })
-    .map((r) => r.id);
+  // 2) 그 bid 들이 선정된 sale_request id 들
+  const { data: myReqs } =
+    myBidIds.length > 0
+      ? await admin
+          .from("sale_requests")
+          .select("id")
+          .in("selected_bid_id", myBidIds)
+      : { data: null };
+  const myRequestIds = (myReqs ?? []).map((r: { id: string }) => r.id);
 
   if (myRequestIds.length === 0) {
     return (
