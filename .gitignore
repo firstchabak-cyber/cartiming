@@ -47,3 +47,7 @@ next-env.d.ts
 
 .vercel
 cartiming - 바로 가기.lnk
+*.png
+
+# 단 public/ 안의 PNG 는 허용
+!public/*.png
