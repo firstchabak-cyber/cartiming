@@ -5,6 +5,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { formatDate, formatMileage } from "@/lib/utils/format";
 import { DealerBidForm } from "@/components/dealer/DealerBidForm";
 import { PriceAdjustmentForm } from "@/components/dealer/PriceAdjustmentForm";
+import { CompleteSaleButton } from "@/components/dealer/CompleteSaleButton";
 import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -190,6 +191,13 @@ export default async function DealerListingDetailPage({
           initialFinalPrice={sale.final_price}
           initialReason={sale.adjustment_reason}
           initialPhotos={adjustmentPhotos}
+        />
+      )}
+
+      {iWasSelected && sale.status === "matched" && (
+        <CompleteSaleButton
+          saleRequestId={sale.id}
+          hasAdjustment={sale.final_price != null}
         />
       )}
 
