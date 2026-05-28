@@ -8,12 +8,14 @@ import {
   Store,
   Users,
   Database,
+  Wallet,
   ArrowLeft,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/admin/sales", label: "매각 신청", icon: ShoppingBag },
+  { href: "/admin/fees", label: "수수료 정산", icon: Wallet },
   { href: "/admin/dealers", label: "딜러 관리", icon: Store },
   { href: "/admin/users", label: "고객 관리", icon: Users },
   { href: "/admin/transactions", label: "실거래 데이터", icon: Database },

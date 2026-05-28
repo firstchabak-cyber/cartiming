@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { CAR_BODY_PARTS, DAMAGE_STATES } from "@/lib/constants/damage";
 import { classifyPlate } from "@/lib/analysis/prompt";
+import { calculateDealerFee } from "@/lib/sales/fee";
 
 const patchSchema = z
   .object({
@@ -164,6 +165,7 @@ export async function PATCH(
         ).length;
         const plateInfo = classifyPlate(data.plate_number);
 
+        const feeAmount = calculateDealerFee(bid.bid_amount);
         await admin.from("sale_transactions").insert({
           user_id: user.id,
           vehicle_id: params.id,
@@ -183,6 +185,8 @@ export async function PATCH(
           snapshot_damage_count: damageCount,
           snapshot_plate_category:
             plateInfo.category === "unknown" ? null : plateInfo.category,
+          fee_amount: feeAmount,
+          fee_status: "uncharged",
         });
 
         await admin
