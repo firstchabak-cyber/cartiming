@@ -37,7 +37,7 @@ export default async function AdminSaleDetailPage({
   const { data: vehicle } = await admin
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity",
     )
     .eq("id", sale.vehicle_id)
     .maybeSingle();
@@ -185,20 +185,6 @@ export default async function AdminSaleDetailPage({
                   <p className="text-xs text-foreground">
                     {(vehicle.options as string[]).join(" · ")}
                   </p>
-                </div>
-              )}
-              {vehicle.loan_principal != null && (
-                <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 p-2 text-xs">
-                  <p className="font-semibold text-warning">⚠️ 대출 차량</p>
-                  <p className="text-muted">
-                    원금 {vehicle.loan_principal.toLocaleString("ko-KR")}원 ·{" "}
-                    {vehicle.loan_months}개월 · 연 {vehicle.loan_apr}%
-                  </p>
-                  {vehicle.loan_started_at && (
-                    <p className="text-muted">
-                      실행일 {vehicle.loan_started_at}
-                    </p>
-                  )}
                 </div>
               )}
             </>
