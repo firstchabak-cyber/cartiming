@@ -549,7 +549,7 @@ function ShareButton({
     lines.push("✅ 헤이딜러 견적 수준의 업자 매입가 추정");
     lines.push("✅ 매각 적기 자동 알림 (무료)");
     lines.push("");
-    lines.push("👉 무료 시작: https://cartiming.vercel.app");
+    lines.push("👉 무료 시작: https://cartiming.app");
     return lines.join("\n");
   };
 

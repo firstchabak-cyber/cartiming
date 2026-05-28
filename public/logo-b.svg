@@ -1,0 +1,35 @@
+<!-- B: 계기판 게이지 (매각 적기 메타포) -->
+<svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="28" fill="url(#bgB)"/>
+  <!-- gauge background arc -->
+  <path d="M 30 92 A 40 40 0 0 1 110 92"
+        fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="9" stroke-linecap="round"/>
+  <!-- gauge filled arc (good zone) -->
+  <path d="M 30 92 A 40 40 0 0 1 96 60"
+        fill="none" stroke="white" stroke-width="9" stroke-linecap="round"/>
+  <!-- tick marks -->
+  <circle cx="30" cy="92" r="2.5" fill="white"/>
+  <circle cx="44" cy="65" r="2.5" fill="white"/>
+  <circle cx="70" cy="52" r="2.5" fill="white"/>
+  <circle cx="96" cy="60" r="2.5" fill="white"/>
+  <circle cx="110" cy="92" r="2.5" fill="rgba(255,255,255,0.4)"/>
+  <!-- needle pointing to good zone -->
+  <line x1="70" y1="92" x2="100" y2="58" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
+  <!-- center hub -->
+  <circle cx="70" cy="92" r="7" fill="white"/>
+  <circle cx="70" cy="92" r="3.5" fill="#1e40af"/>
+  <!-- bottom label -->
+  <text x="70" y="120"
+        font-family="'Noto Sans KR', sans-serif"
+        font-size="13"
+        font-weight="800"
+        fill="white"
+        text-anchor="middle"
+        letter-spacing="1">CARTIMING</text>
+</svg>
