@@ -9,7 +9,7 @@ export default async function DealerListingsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/dealer/listings");
+  if (!user) redirect("/dealer/login?next=/dealer/listings");
 
   const { data: dealer } = await supabase
     .from("dealers")

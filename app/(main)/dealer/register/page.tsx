@@ -8,7 +8,7 @@ export default async function DealerRegisterPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/dealer/register");
+  if (!user) redirect("/dealer/login?next=/dealer/register");
 
   const { data: existing } = await supabase
     .from("dealers")

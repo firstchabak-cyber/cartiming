@@ -18,7 +18,7 @@ export default async function DealerListingDetailPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=/dealer/listings/${params.id}`);
+  if (!user) redirect(`/dealer/login?next=/dealer/listings/${params.id}`);
 
   const { data: dealer } = await supabase
     .from("dealers")
