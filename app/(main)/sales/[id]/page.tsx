@@ -7,6 +7,7 @@ import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { SelectBidButton } from "@/components/sale/SelectBidButton";
 import { SalePhotoUploader } from "@/components/sale/SalePhotoUploader";
 import { BiddingCountdown } from "@/components/sale/BiddingCountdown";
+import { ReviewForm } from "@/components/sale/ReviewForm";
 
 const STATUS_META: Record<
   string,
@@ -50,10 +51,45 @@ export default async function SaleStatusPage({
   const { data: bids } = await supabase
     .from("sale_bids")
     .select(
-      "id, dealer_name, dealer_phone, dealer_location, bid_amount, notes, status, created_at",
+      "id, dealer_id, dealer_name, dealer_phone, dealer_location, bid_amount, notes, status, created_at",
     )
     .eq("sale_request_id", sale.id)
     .order("bid_amount", { ascending: false });
+
+  // 딜러 평점 묶기 (dealer_id 있는 입찰만)
+  const dealerIds = (bids ?? [])
+    .map((b) => b.dealer_id)
+    .filter((id): id is string => !!id);
+  const { data: dealerRatings } =
+    dealerIds.length > 0
+      ? await supabase
+          .from("dealers")
+          .select("user_id, business_name, rating_avg, rating_count")
+          .in("user_id", dealerIds)
+      : { data: null };
+  const ratingMap = new Map<
+    string,
+    { rating_avg: number | null; rating_count: number; business_name: string }
+  >();
+  for (const d of (dealerRatings ?? []) as Array<{
+    user_id: string;
+    business_name: string;
+    rating_avg: number | null;
+    rating_count: number;
+  }>) {
+    ratingMap.set(d.user_id, {
+      rating_avg: d.rating_avg,
+      rating_count: d.rating_count,
+      business_name: d.business_name,
+    });
+  }
+
+  // 이미 후기 있는지
+  const { data: existingReview } = await supabase
+    .from("dealer_reviews")
+    .select("id, rating, comment, anonymous, created_at")
+    .eq("sale_request_id", sale.id)
+    .maybeSingle();
 
   // 사진 + 서명된 URL
   const { data: photoRows } = await supabase
@@ -196,34 +232,73 @@ export default async function SaleStatusPage({
           <h2 className="text-sm font-semibold text-foreground">
             입찰 {bidsList.length}건 (높은 가격순)
           </h2>
-          {(sale.status === "matched" ? otherBids : bidsList).map((b, i) => (
-            <Card key={b.id} className="flex flex-col gap-2">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {sale.status !== "matched" && i === 0 ? "🏆 " : ""}
-                    {b.dealer_name}
+          {(sale.status === "matched" ? otherBids : bidsList).map((b, i) => {
+            const dealerInfo = b.dealer_id ? ratingMap.get(b.dealer_id) : null;
+            return (
+              <Card key={b.id} className="flex flex-col gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {sale.status !== "matched" && i === 0 ? "🏆 " : ""}
+                      {b.dealer_name}
+                    </p>
+                    {dealerInfo?.rating_avg != null && (
+                      <p className="text-xs text-warning">
+                        ★ {dealerInfo.rating_avg} ({dealerInfo.rating_count}건)
+                      </p>
+                    )}
+                    {b.dealer_location && (
+                      <p className="text-xs text-muted">📍 {b.dealer_location}</p>
+                    )}
+                  </div>
+                  <p className="text-lg font-bold text-foreground">
+                    {formatKRW(b.bid_amount)}
                   </p>
-                  {b.dealer_location && (
-                    <p className="text-xs text-muted">📍 {b.dealer_location}</p>
-                  )}
                 </div>
-                <p className="text-lg font-bold text-foreground">
-                  {formatKRW(b.bid_amount)}
-                </p>
-              </div>
-              {b.notes && <p className="text-xs text-muted">{b.notes}</p>}
-              {sale.status === "pending" || sale.status === "bidding" ? (
-                <SelectBidButton
-                  saleRequestId={sale.id}
-                  bidId={b.id}
-                  dealerName={b.dealer_name}
-                  bidAmount={b.bid_amount}
-                />
-              ) : null}
-            </Card>
-          ))}
+                {b.notes && <p className="text-xs text-muted">{b.notes}</p>}
+                {sale.status === "pending" || sale.status === "bidding" ? (
+                  <SelectBidButton
+                    saleRequestId={sale.id}
+                    bidId={b.id}
+                    dealerName={b.dealer_name}
+                    bidAmount={b.bid_amount}
+                  />
+                ) : null}
+              </Card>
+            );
+          })}
         </section>
+      )}
+
+      {sale.status === "completed" && !existingReview && selectedBid?.dealer_phone && (
+        <ReviewForm
+          saleRequestId={sale.id}
+          dealerName={selectedBid?.dealer_name ?? "딜러"}
+        />
+      )}
+
+      {existingReview && (
+        <Card className="flex flex-col gap-2 border-success/30 bg-success/5">
+          <p className="text-sm font-semibold text-success">
+            ✅ 후기 작성 완료
+          </p>
+          <p className="text-warning">
+            {"★".repeat(existingReview.rating)}
+            <span className="text-muted">
+              {"★".repeat(5 - existingReview.rating)}
+            </span>
+            <span className="ml-2 text-foreground">
+              {existingReview.rating}점
+            </span>
+          </p>
+          {existingReview.comment && (
+            <p className="text-sm text-muted">"{existingReview.comment}"</p>
+          )}
+          <p className="text-[11px] text-muted">
+            {formatDate(existingReview.created_at)}
+            {existingReview.anonymous && " · 익명"}
+          </p>
+        </Card>
       )}
 
       <section className="mt-2 flex flex-col gap-2 text-xs text-muted">

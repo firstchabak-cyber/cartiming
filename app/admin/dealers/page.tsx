@@ -12,6 +12,8 @@ type DealerRow = {
   location: string | null;
   verified: boolean;
   verified_at: string | null;
+  rating_avg: number | null;
+  rating_count: number;
   created_at: string;
 };
 
@@ -20,7 +22,7 @@ export default async function AdminDealersPage() {
   const { data: dealers } = await admin
     .from("dealers")
     .select(
-      "user_id, business_name, business_reg_number, contact_phone, location, verified, verified_at, created_at",
+      "user_id, business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count, created_at",
     )
     .order("created_at", { ascending: false });
 
@@ -73,7 +75,14 @@ function DealerCard({ d }: { d: DealerRow }) {
     <li>
       <Card className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <CardTitle>{d.business_name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>{d.business_name}</CardTitle>
+            {d.rating_count > 0 && (
+              <span className="text-xs text-warning">
+                ★ {d.rating_avg} ({d.rating_count})
+              </span>
+            )}
+          </div>
           {d.verified ? (
             <Badge tone="success">승인됨</Badge>
           ) : (

@@ -12,9 +12,19 @@ export default async function DealerRegisterPage() {
 
   const { data: existing } = await supabase
     .from("dealers")
-    .select("business_name, business_reg_number, contact_phone, location, verified, verified_at")
+    .select(
+      "business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count",
+    )
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // 본인이 받은 후기 (verified 와 무관하게 조회)
+  const { data: myReviews } = await supabase
+    .from("dealer_reviews")
+    .select("id, rating, comment, anonymous, created_at")
+    .eq("dealer_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   if (existing?.verified) {
     return (
@@ -35,8 +45,47 @@ export default async function DealerRegisterPage() {
                 <dd className="text-right">{existing.location}</dd>
               </>
             )}
+            {existing.rating_count > 0 && (
+              <>
+                <dt className="text-muted">평점</dt>
+                <dd className="text-right text-warning">
+                  ★ {existing.rating_avg} ({existing.rating_count}건)
+                </dd>
+              </>
+            )}
           </dl>
         </Card>
+
+        {(myReviews?.length ?? 0) > 0 && (
+          <Card className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              내가 받은 후기 ({myReviews!.length}건)
+            </p>
+            <ul className="flex flex-col divide-y divide-border">
+              {(myReviews as Array<{
+                id: string;
+                rating: number;
+                comment: string | null;
+                anonymous: boolean;
+                created_at: string;
+              }>).map((r) => (
+                <li key={r.id} className="flex flex-col gap-1 py-2">
+                  <p className="text-warning text-sm">
+                    {"★".repeat(r.rating)}
+                    <span className="text-muted">{"★".repeat(5 - r.rating)}</span>
+                  </p>
+                  {r.comment && (
+                    <p className="text-xs text-foreground">"{r.comment}"</p>
+                  )}
+                  <p className="text-[11px] text-muted">
+                    {new Date(r.created_at).toLocaleDateString("ko-KR")}
+                    {r.anonymous && " · 익명"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
         <a
           href="/dealer/listings"
           className="block rounded-xl bg-primary py-3 text-center text-sm font-semibold text-white"
