@@ -1,0 +1,29 @@
+<!-- F: 큰 한글 "차" + 시계 바늘 -->
+<svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgF" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="28" fill="url(#bgF)"/>
+  <!-- background clock circle (subtle) -->
+  <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <!-- 12, 3, 6, 9 tick dots -->
+  <circle cx="70" cy="22" r="2.5" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="118" cy="70" r="2.5" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="70" cy="118" r="2.5" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="22" cy="70" r="2.5" fill="rgba(255,255,255,0.4)"/>
+  <!-- big 차 in center -->
+  <text x="50%" y="50%"
+        font-family="'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif"
+        font-size="84"
+        font-weight="900"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="central"
+        dy="4">차</text>
+  <!-- timing accent — minute hand pointing top-right -->
+  <line x1="70" y1="70" x2="108" y2="40" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="70" cy="70" r="4" fill="#f59e0b"/>
+</svg>

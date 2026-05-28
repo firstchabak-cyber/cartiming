@@ -1,0 +1,31 @@
+<!-- E: 게이지의 바늘을 차로 — B + C 융합 -->
+<svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgE" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="28" fill="url(#bgE)"/>
+  <!-- gauge background arc -->
+  <path d="M 28 95 A 42 42 0 0 1 112 95"
+        fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" stroke-linecap="round"/>
+  <!-- gauge green/good zone arc -->
+  <path d="M 84 53 A 42 42 0 0 1 112 95"
+        fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round"/>
+  <!-- tick marks -->
+  <line x1="28" y1="90" x2="32" y2="86" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="70" y1="50" x2="70" y2="55" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="112" y1="90" x2="108" y2="86" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <!-- needle line (to good zone) -->
+  <line x1="70" y1="95" x2="102" y2="62" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- tiny car at needle tip (top-down, pointing up-right) -->
+  <g transform="translate(102, 62) rotate(45)">
+    <rect x="-7" y="-11" width="14" height="22" rx="4" fill="white"/>
+    <rect x="-5" y="-8" width="10" height="6" rx="1" fill="#1e3a8a"/>
+    <rect x="-5" y="2" width="10" height="6" rx="1" fill="#1e3a8a"/>
+  </g>
+  <!-- center hub -->
+  <circle cx="70" cy="95" r="6" fill="white"/>
+  <circle cx="70" cy="95" r="3" fill="#1e40af"/>
+</svg>
