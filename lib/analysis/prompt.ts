@@ -140,6 +140,7 @@ export function buildAnalysisPrompt(args: {
   maintenance: MaintenanceRecord[];
   ctx: PromptContext;
   today?: string;
+  similarSalesText?: string;
 }): string {
   const { vehicle, maintenance, ctx } = args;
   const { loan, balances, monthly } = ctx;
@@ -299,6 +300,8 @@ ${damageSection}
 
 정비/사고 이력 (총 ${maintenance.length}건, 사고 ${accidentCount}건 / 판금·교환·수리 ${repairCount}건):
 ${maintenanceLines}
+
+${args.similarSalesText ?? ""}
 
 ${loanSection}
 

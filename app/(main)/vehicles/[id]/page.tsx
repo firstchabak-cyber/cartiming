@@ -8,6 +8,7 @@ import { DeleteVehicleButton } from "@/components/vehicle/DeleteVehicleButton";
 import { DeleteMaintenanceButton } from "@/components/vehicle/DeleteMaintenanceButton";
 import { MarkAsSoldButton } from "@/components/vehicle/MarkAsSoldButton";
 import { RestoreVehicleButton } from "@/components/vehicle/RestoreVehicleButton";
+import { ExternalSaleButton } from "@/components/sale/ExternalSaleButton";
 import { PhotoGallery } from "@/components/vehicle/PhotoGallery";
 import { CATEGORY_TONE } from "@/lib/constants/maintenance";
 import type { MaintenanceCategory } from "@/lib/constants/maintenance";
@@ -169,7 +170,25 @@ export default async function VehicleDetailPage({
       </header>
 
       {!isSold && (
-        <MarkAsSoldButton vehicleId={vehicle.id} carLabel={carLabel} />
+        <Card className="flex flex-col gap-2 border-primary/30 bg-primary/5">
+          <p className="text-sm font-semibold text-foreground">매각하기</p>
+          <p className="text-xs text-muted">
+            카타이밍에서 매각하면 <strong>영구 무료 슬롯 +1</strong> · 외부에서 매각하면
+            가격 신고로 다른 사용자 시세 분석에 기여.
+          </p>
+          <Link href={`/vehicles/${vehicle.id}/sell`}>
+            <Button fullWidth>💼 카타이밍에서 매각 신청</Button>
+          </Link>
+          <ExternalSaleButton vehicleId={vehicle.id} />
+          <details className="mt-1">
+            <summary className="cursor-pointer text-[11px] text-muted">
+              그냥 매각 완료로만 표시 (슬롯 회복 없음)
+            </summary>
+            <div className="mt-2">
+              <MarkAsSoldButton vehicleId={vehicle.id} carLabel={carLabel} />
+            </div>
+          </details>
+        </Card>
       )}
 
       {photos.length > 0 && <PhotoGallery photos={photos} />}

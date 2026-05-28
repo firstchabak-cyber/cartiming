@@ -13,16 +13,18 @@ type SpendType =
 export async function getBalance(userId: string): Promise<{
   balance: number;
   lifetime: boolean;
+  permanentFreeSlots: number;
 }> {
   const supabase = createClient();
   const { data } = await supabase
     .from("user_credits")
-    .select("balance, lifetime_member")
+    .select("balance, lifetime_member, permanent_free_slots")
     .eq("user_id", userId)
     .maybeSingle();
   return {
     balance: data?.balance ?? 0,
     lifetime: data?.lifetime_member ?? false,
+    permanentFreeSlots: data?.permanent_free_slots ?? 0,
   };
 }
 
@@ -91,6 +93,8 @@ export async function getVehicleSlots(userId: string): Promise<{
   activeCount: number;
   freeSlots: number;
   canAddFree: boolean;
+  permanentSlots: number;
+  recoverySlots: number;
 }> {
   const supabase = createClient();
 
@@ -100,6 +104,7 @@ export async function getVehicleSlots(userId: string): Promise<{
     .eq("user_id", userId)
     .eq("status", "active");
 
+  // 3개월 이내 매각 (외부 매각 신고 포함) → 일시 복구 슬롯
   const cutoff = new Date();
   cutoff.setUTCMonth(cutoff.getUTCMonth() - SOLD_SLOT_RECOVERY_MONTHS);
   const { count: recentSoldCount } = await supabase
@@ -109,11 +114,22 @@ export async function getVehicleSlots(userId: string): Promise<{
     .eq("status", "sold")
     .gte("sold_at", cutoff.toISOString());
 
-  const free = 1 + (recentSoldCount ?? 0);
+  // 카타이밍 통한 매각 완료 → 영구 슬롯 (user_credits.permanent_free_slots)
+  const { data: creditRow } = await supabase
+    .from("user_credits")
+    .select("permanent_free_slots")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const permanentSlots = creditRow?.permanent_free_slots ?? 0;
+  const recoverySlots = recentSoldCount ?? 0;
+
+  const free = 1 + permanentSlots + recoverySlots;
   const active = activeCount ?? 0;
   return {
     activeCount: active,
     freeSlots: free,
     canAddFree: active < free,
+    permanentSlots,
+    recoverySlots,
   };
 }

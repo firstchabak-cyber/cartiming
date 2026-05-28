@@ -15,6 +15,10 @@ import {
   spendCredits,
 } from "@/lib/credits/server";
 import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
+import {
+  formatSimilarSalesForPrompt,
+  getSimilarSales,
+} from "@/lib/analysis/similarSales";
 
 const requestSchema = z.object({
   vehicleId: z.string().uuid(),
@@ -100,6 +104,11 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (cached) {
+      const sims = await getSimilarSales({
+        manufacturer: vehicle.manufacturer,
+        model: vehicle.model,
+        year: vehicle.year,
+      });
       return NextResponse.json({
         vehicle_id: vehicle.id,
         current_price: cached.current_price,
@@ -113,6 +122,7 @@ export async function POST(request: Request) {
         rationale: cached.rationale,
         generated_at: cached.generated_at,
         cached: true,
+        similar_sales: sims,
         loan: ctx.loan
           ? {
               principal: ctx.loan.principal,
@@ -149,10 +159,18 @@ export async function POST(request: Request) {
     }
   }
 
+  const similarSales = await getSimilarSales({
+    manufacturer: vehicle.manufacturer,
+    model: vehicle.model,
+    year: vehicle.year,
+  });
+  const similarSalesText = formatSimilarSalesForPrompt(similarSales);
+
   const prompt = buildAnalysisPrompt({
     vehicle: vehicle as VehicleForPrompt,
     maintenance: records,
     ctx,
+    similarSalesText,
   });
 
   let raw: string;
@@ -224,6 +242,7 @@ export async function POST(request: Request) {
     ...analysis,
     generated_at: saved?.generated_at ?? new Date().toISOString(),
     cached: false,
+    similar_sales: similarSales,
     loan: ctx.loan
       ? {
           principal: ctx.loan.principal,

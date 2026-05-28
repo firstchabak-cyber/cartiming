@@ -41,6 +41,15 @@ type LoanInfo = {
   };
 };
 
+type SimilarSale = {
+  channel: "cartiming" | "external";
+  sold_price: number;
+  sold_at: string;
+  snapshot_year: number;
+  snapshot_mileage: number;
+  snapshot_damage_count: number;
+};
+
 type AnalysisResult = {
   vehicle_id: string;
   current_price: number;
@@ -55,6 +64,7 @@ type AnalysisResult = {
   generated_at: string;
   cached?: boolean;
   loan: LoanInfo | null;
+  similar_sales?: SimilarSale[];
 };
 
 function formatRelativeTime(iso: string) {
@@ -461,6 +471,41 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
               </table>
             </div>
           </Card>
+
+          {result.similar_sales && result.similar_sales.length > 0 && (
+            <Card className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                📊 비슷한 차량 실거래 매각 ({result.similar_sales.length}건)
+              </p>
+              <p className="text-[11px] text-muted">
+                동일 모델 ±2년식, 최근 18개월 매각 데이터
+              </p>
+              <ul className="flex flex-col divide-y divide-border">
+                {result.similar_sales.map((s, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-2 py-2 text-xs"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-foreground">
+                        {s.sold_at} · {s.snapshot_year}년식 ·{" "}
+                        {s.snapshot_mileage.toLocaleString("ko-KR")} km
+                        {s.snapshot_damage_count > 0
+                          ? ` · 손상${s.snapshot_damage_count}곳`
+                          : " · 무사고"}
+                      </span>
+                      <span className="text-[10px] text-muted">
+                        {s.channel === "cartiming" ? "🏷 카타이밍" : "📍 외부"}
+                      </span>
+                    </div>
+                    <span className="font-semibold text-foreground">
+                      {formatKRW(s.sold_price)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           <Card className="flex flex-col gap-2 border-warning/30 bg-warning/5">
             <p className="text-sm font-semibold text-foreground">
