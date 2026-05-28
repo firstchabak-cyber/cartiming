@@ -49,7 +49,15 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    // /dealer/* 의 인증 필수 페이지는 딜러 로그인으로, 그 외는 일반 로그인으로
+    const isDealerProtected =
+      pathname.startsWith("/dealer/") && !isDealerEntryRoute;
+    url.pathname = isDealerProtected ? "/dealer/login" : "/login";
+    // 원래 가려던 경로를 next 로 보존 (로그인 후 자동 복귀)
+    const originalPath =
+      request.nextUrl.pathname +
+      (request.nextUrl.search ? request.nextUrl.search : "");
+    url.search = `?next=${encodeURIComponent(originalPath)}`;
     return NextResponse.redirect(url);
   }
 
