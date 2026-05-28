@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { formatDate, formatMileage } from "@/lib/utils/format";
 import { DealerBidForm } from "@/components/dealer/DealerBidForm";
+import { PriceAdjustmentForm } from "@/components/dealer/PriceAdjustmentForm";
 import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -28,7 +29,7 @@ export default async function DealerListingDetailPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, selected_bid_id, matched_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
+      "id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, selected_bid_id, matched_at, final_price, adjustment_reason, adjusted_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -92,6 +93,21 @@ export default async function DealerListingDetailPage({
     .eq("sale_request_id", params.id)
     .eq("dealer_id", user.id)
     .maybeSingle();
+
+  // 감가 증빙 사진 (선정된 딜러 본인 것)
+  const { data: adjPhotoRows } = await admin
+    .from("sale_adjustment_photos")
+    .select("id, storage_path")
+    .eq("sale_request_id", params.id)
+    .order("sort_order", { ascending: true });
+  const adjustmentPhotos = await Promise.all(
+    (adjPhotoRows ?? []).map(async (p: { id: string; storage_path: string }) => {
+      const { data: signed } = await admin.storage
+        .from("sale-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return { id: p.id, signed_url: signed?.signedUrl ?? "" };
+    }),
+  );
 
   const damageMap =
     v?.damage_map && typeof v.damage_map === "object" ? v.damage_map : {};
@@ -165,6 +181,16 @@ export default async function DealerListingDetailPage({
             </p>
           )}
         </Card>
+      )}
+
+      {iWasSelected && myBid && (
+        <PriceAdjustmentForm
+          saleRequestId={sale.id}
+          bidAmount={myBid.bid_amount}
+          initialFinalPrice={sale.final_price}
+          initialReason={sale.adjustment_reason}
+          initialPhotos={adjustmentPhotos}
+        />
       )}
 
       {iWasRejected && (

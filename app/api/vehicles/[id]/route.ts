@@ -142,7 +142,7 @@ export async function PATCH(
     const admin = createAdminClient();
     const { data: matchedRequest } = await admin
       .from("sale_requests")
-      .select("id, selected_bid_id")
+      .select("id, selected_bid_id, final_price")
       .eq("vehicle_id", params.id)
       .eq("status", "matched")
       .maybeSingle();
@@ -156,6 +156,8 @@ export async function PATCH(
         .maybeSingle();
 
       if (bid) {
+        // 딜러 조정가가 있으면 그것 사용, 없으면 원 입찰가
+        const actualPrice = matchedRequest.final_price ?? bid.bid_amount;
         const damageMap =
           data.damage_map && typeof data.damage_map === "object"
             ? (data.damage_map as Record<string, string>)
@@ -165,13 +167,13 @@ export async function PATCH(
         ).length;
         const plateInfo = classifyPlate(data.plate_number);
 
-        const feeAmount = calculateDealerFee(bid.bid_amount);
+        const feeAmount = calculateDealerFee(actualPrice);
         await admin.from("sale_transactions").insert({
           user_id: user.id,
           vehicle_id: params.id,
           source_sale_request_id: matchedRequest.id,
           channel: "cartiming",
-          sold_price: bid.bid_amount,
+          sold_price: actualPrice,
           sold_at: new Date().toISOString().slice(0, 10),
           buyer_type: "dealer",
           snapshot_manufacturer: data.manufacturer,

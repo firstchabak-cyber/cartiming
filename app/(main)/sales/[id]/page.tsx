@@ -34,7 +34,7 @@ export default async function SaleStatusPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, vehicle_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, approved_at, matched_at, completed_at, selected_bid_id, created_at",
+      "id, vehicle_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, approved_at, matched_at, completed_at, selected_bid_id, final_price, adjustment_reason, adjusted_at, created_at",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -91,6 +91,21 @@ export default async function SaleStatusPage({
     .eq("sale_request_id", sale.id)
     .maybeSingle();
 
+  // 감가 증빙 사진
+  const { data: adjPhotoRows } = await supabase
+    .from("sale_adjustment_photos")
+    .select("id, storage_path")
+    .eq("sale_request_id", sale.id)
+    .order("sort_order", { ascending: true });
+  const adjustmentPhotos = await Promise.all(
+    (adjPhotoRows ?? []).map(async (p) => {
+      const { data: signed } = await supabase.storage
+        .from("sale-photos")
+        .createSignedUrl(p.storage_path, 3600);
+      return { id: p.id, signed_url: signed?.signedUrl ?? "" };
+    }),
+  );
+
   // 사진 + 서명된 URL
   const { data: photoRows } = await supabase
     .from("sale_photos")
@@ -137,6 +152,77 @@ export default async function SaleStatusPage({
           <CardDescription>
             {vehicle.year}년식 · {formatMileage(sale.current_mileage ?? vehicle.mileage)}
           </CardDescription>
+        </Card>
+      )}
+
+      {sale.status === "matched" && selectedBid && sale.final_price && (
+        <Card className="flex flex-col gap-3 border-warning bg-warning/5">
+          <p className="text-sm font-semibold text-foreground">
+            💼 딜러의 실 매입가 조정 결과
+          </p>
+          <div className="flex justify-between rounded-lg bg-background p-3 text-sm">
+            <span className="text-muted">입찰가</span>
+            <span className="font-semibold text-foreground">
+              {formatKRW(selectedBid.bid_amount)}
+            </span>
+          </div>
+          <div className="flex justify-between rounded-lg bg-background p-3 text-sm">
+            <span className="text-muted">실 매입가</span>
+            <span className="font-bold text-foreground">
+              {formatKRW(sale.final_price)}
+            </span>
+          </div>
+          {sale.final_price !== selectedBid.bid_amount && (
+            <div
+              className={`flex justify-between rounded-lg p-3 text-sm font-semibold ${
+                sale.final_price < selectedBid.bid_amount
+                  ? "bg-danger/10 text-danger"
+                  : "bg-success/10 text-success"
+              }`}
+            >
+              <span>차이</span>
+              <span>
+                {sale.final_price > selectedBid.bid_amount ? "+" : ""}
+                {formatKRW(sale.final_price - selectedBid.bid_amount)}
+              </span>
+            </div>
+          )}
+          {sale.adjustment_reason && (
+            <div className="rounded-lg bg-background p-3">
+              <p className="text-xs font-semibold text-foreground">조정 사유</p>
+              <p className="mt-1 text-xs text-muted whitespace-pre-line">
+                {sale.adjustment_reason}
+              </p>
+            </div>
+          )}
+          {adjustmentPhotos.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold text-foreground">감가 증빙 사진</p>
+              <div className="flex flex-wrap gap-2">
+                {adjustmentPhotos.map((p) => (
+                  <a
+                    key={p.id}
+                    href={p.signed_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-20 w-20 overflow-hidden rounded-lg border border-border"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.signed_url}
+                      alt="감가 증빙"
+                      className="h-full w-full object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {sale.adjusted_at && (
+            <p className="text-[11px] text-muted">
+              조정일: {formatDate(sale.adjusted_at)}
+            </p>
+          )}
         </Card>
       )}
 
