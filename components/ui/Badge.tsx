@@ -2,7 +2,7 @@ import { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
-  tone?: "success" | "warning" | "danger" | "neutral";
+  tone?: "success" | "warning" | "danger" | "neutral" | "primary";
 };
 
 const TONES: Record<NonNullable<BadgeProps["tone"]>, string> = {
@@ -10,6 +10,7 @@ const TONES: Record<NonNullable<BadgeProps["tone"]>, string> = {
   warning: "bg-warning/10 text-warning",
   danger: "bg-danger/10 text-danger",
   neutral: "bg-surface text-muted",
+  primary: "bg-primary/10 text-primary",
 };
 
 export function Badge({ tone = "neutral", className, ...props }: BadgeProps) {

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 import { FEE_STATUS_LABEL } from "@/lib/sales/fee";
 import { FeeStatusButton } from "@/components/admin/FeeStatusButton";
+import { BUSINESS_INFO } from "@/lib/constants/business";
 
 type FeeRow = {
   id: string;
@@ -14,6 +15,8 @@ type FeeRow = {
   fee_status: string | null;
   fee_charged_at: string | null;
   fee_paid_at: string | null;
+  fee_payment_reported_at: string | null;
+  fee_payment_method: string | null;
   fee_note: string | null;
   snapshot_manufacturer: string;
   snapshot_model: string;
@@ -23,12 +26,20 @@ type FeeRow = {
 
 type DealerLite = { dealer_id: string | null; dealer_name: string };
 
+type DealerProfile = {
+  user_id: string;
+  business_name: string;
+  business_reg_number: string;
+  contact_phone: string;
+  email?: string | null;
+};
+
 export default async function AdminFeesPage() {
   const admin = createAdminClient();
   const { data: txns } = await admin
     .from("sale_transactions")
     .select(
-      "id, channel, sold_price, sold_at, fee_amount, fee_status, fee_charged_at, fee_paid_at, fee_note, snapshot_manufacturer, snapshot_model, snapshot_year, source_sale_request_id",
+      "id, channel, sold_price, sold_at, fee_amount, fee_status, fee_charged_at, fee_paid_at, fee_payment_reported_at, fee_payment_method, fee_note, snapshot_manufacturer, snapshot_model, snapshot_year, source_sale_request_id",
     )
     .eq("channel", "cartiming")
     .order("sold_at", { ascending: false })
@@ -36,7 +47,7 @@ export default async function AdminFeesPage() {
 
   const list = (txns as FeeRow[]) ?? [];
 
-  // 각 거래의 선정 딜러 정보 묶기
+  // 각 거래의 선정 딜러 정보 + 사업자 프로필 묶기
   const requestIds = list
     .map((t) => t.source_sale_request_id)
     .filter((id): id is string => !!id);
@@ -58,15 +69,58 @@ export default async function AdminFeesPage() {
     if (b) dealerMap.set(r.id, b);
   }
 
+  // 딜러 사업자 정보 (계산서 발행용)
+  const dealerUserIds = Array.from(
+    new Set(
+      Array.from(dealerMap.values())
+        .map((d) => d.dealer_id)
+        .filter((id): id is string => !!id),
+    ),
+  );
+  const { data: dealerProfiles } =
+    dealerUserIds.length > 0
+      ? await admin
+          .from("dealers")
+          .select("user_id, business_name, business_reg_number, contact_phone")
+          .in("user_id", dealerUserIds)
+      : { data: null };
+  const profileMap = new Map<string, DealerProfile>();
+  for (const p of (dealerProfiles ?? []) as DealerProfile[]) {
+    profileMap.set(p.user_id, p);
+  }
+  // 딜러 이메일 (auth)
+  const emailMap = new Map<string, string>();
+  if (dealerUserIds.length > 0) {
+    const { data: authList } = await admin.auth.admin.listUsers();
+    for (const u of authList?.users ?? []) {
+      if (u.email && dealerUserIds.includes(u.id)) {
+        emailMap.set(u.id, u.email);
+      }
+    }
+  }
+
   const uncharged = list.filter((t) => t.fee_status === "uncharged");
   const charged = list.filter((t) => t.fee_status === "charged");
   const paid = list.filter((t) => t.fee_status === "paid");
+  const reportedCount = charged.filter(
+    (t) => !!t.fee_payment_reported_at,
+  ).length;
 
   const totalDue = [...uncharged, ...charged].reduce(
     (sum, t) => sum + (t.fee_amount ?? 0),
     0,
   );
   const totalCollected = paid.reduce((sum, t) => sum + (t.fee_amount ?? 0), 0);
+
+  // 입금 신고 된 거래를 맨 위로
+  const sorted = [...list].sort((a, b) => {
+    const aReported =
+      a.fee_status === "charged" && a.fee_payment_reported_at ? 1 : 0;
+    const bReported =
+      b.fee_status === "charged" && b.fee_payment_reported_at ? 1 : 0;
+    if (aReported !== bReported) return bReported - aReported;
+    return a.sold_at < b.sold_at ? 1 : -1;
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -86,6 +140,11 @@ export default async function AdminFeesPage() {
         <Card className="flex flex-col gap-1">
           <p className="text-xs text-muted">청구 중</p>
           <p className="text-xl font-bold text-primary">{charged.length}건</p>
+          {reportedCount > 0 && (
+            <p className="text-[10px] font-semibold text-warning">
+              🔔 딜러 입금 신고 {reportedCount}건 (확인 필요)
+            </p>
+          )}
         </Card>
         <Card className="flex flex-col gap-1">
           <p className="text-xs text-muted">입금 완료</p>
@@ -115,7 +174,7 @@ export default async function AdminFeesPage() {
               <tr>
                 <th className="p-2 text-left">매각일</th>
                 <th className="p-2 text-left">차종</th>
-                <th className="p-2 text-left">딜러</th>
+                <th className="p-2 text-left">딜러 / 계산서 정보</th>
                 <th className="p-2 text-right">매각가</th>
                 <th className="p-2 text-right">수수료</th>
                 <th className="p-2 text-left">상태</th>
@@ -123,41 +182,69 @@ export default async function AdminFeesPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((t) => {
+              {sorted.map((t) => {
                 const dealer = t.source_sale_request_id
                   ? dealerMap.get(t.source_sale_request_id)
                   : null;
+                const profile = dealer?.dealer_id
+                  ? profileMap.get(dealer.dealer_id)
+                  : null;
+                const email = dealer?.dealer_id
+                  ? emailMap.get(dealer.dealer_id)
+                  : null;
                 const status = t.fee_status ?? "uncharged";
-                const tone =
-                  status === "paid"
+                const isReported =
+                  status === "charged" && !!t.fee_payment_reported_at;
+                const tone = isReported
+                  ? "primary"
+                  : status === "paid"
                     ? "success"
                     : status === "charged"
                       ? "warning"
                       : status === "waived"
                         ? "neutral"
                         : "danger";
+                const statusLabel = isReported
+                  ? "🔔 입금 신고됨"
+                  : (FEE_STATUS_LABEL[status] ?? status);
                 return (
-                  <tr key={t.id} className="border-b border-border hover:bg-surface">
-                    <td className="p-2 text-xs">{t.sold_at}</td>
-                    <td className="p-2">
+                  <tr
+                    key={t.id}
+                    className={`border-b border-border hover:bg-surface ${isReported ? "bg-primary/5" : ""}`}
+                  >
+                    <td className="p-2 align-top text-xs">{t.sold_at}</td>
+                    <td className="p-2 align-top">
                       {t.snapshot_manufacturer} {t.snapshot_model} (
                       {t.snapshot_year})
                     </td>
-                    <td className="p-2 text-xs">
-                      {dealer?.dealer_name ?? "운영자 등록"}
+                    <td className="p-2 align-top text-xs">
+                      <div className="font-semibold">
+                        {dealer?.dealer_name ?? "운영자 등록"}
+                      </div>
+                      {profile && (
+                        <div className="mt-0.5 flex flex-col gap-0 text-[10px] text-muted">
+                          <span>상호: {profile.business_name}</span>
+                          <span>사업자: {profile.business_reg_number}</span>
+                          {email && <span>이메일: {email}</span>}
+                          <span>전화: {profile.contact_phone}</span>
+                        </div>
+                      )}
                     </td>
-                    <td className="p-2 text-right">
+                    <td className="p-2 align-top text-right">
                       {formatKRW(t.sold_price)}
                     </td>
-                    <td className="p-2 text-right font-semibold text-warning">
+                    <td className="p-2 align-top text-right font-semibold text-warning">
                       {t.fee_amount ? formatKRW(t.fee_amount) : "-"}
                     </td>
-                    <td className="p-2">
-                      <Badge tone={tone}>
-                        {FEE_STATUS_LABEL[status] ?? status}
-                      </Badge>
+                    <td className="p-2 align-top">
+                      <Badge tone={tone}>{statusLabel}</Badge>
+                      {isReported && t.fee_payment_reported_at && (
+                        <p className="mt-1 text-[10px] text-muted">
+                          신고 {t.fee_payment_reported_at.slice(0, 10)}
+                        </p>
+                      )}
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 align-top">
                       <FeeStatusButton
                         transactionId={t.id}
                         currentStatus={status}
@@ -168,6 +255,11 @@ export default async function AdminFeesPage() {
               })}
             </tbody>
           </table>
+          <p className="mt-2 text-[10px] text-muted">
+            ※ 입금 계좌: {BUSINESS_INFO.bankAccount.bankName}{" "}
+            {BUSINESS_INFO.bankAccount.accountNumber}{" "}
+            {BUSINESS_INFO.bankAccount.accountHolder} — 딜러 알림에 자동 발송됨
+          </p>
         </div>
       )}
     </div>

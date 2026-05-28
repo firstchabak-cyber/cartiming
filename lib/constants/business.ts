@@ -32,4 +32,11 @@ export const BUSINESS_INFO = {
 
   /** 호스팅 제공자 */
   hostingProvider: "Vercel Inc.",
+
+  /** 수수료 입금 계좌 (딜러 수수료 정산용) */
+  bankAccount: {
+    bankName: "NH농협",
+    accountNumber: "312-0207-6452-11",
+    accountHolder: "장문성 (모토베이션)",
+  },
 } as const;

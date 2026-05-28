@@ -50,6 +50,9 @@ export default async function DealerListingsPage() {
           <Link href="/dealer/bids" className="text-primary underline">
             내 입찰 내역
           </Link>
+          <Link href="/dealer/fees" className="text-primary underline">
+            내 수수료
+          </Link>
           <Link href="/dealer/register" className="text-primary underline">
             내 딜러 정보
           </Link>
