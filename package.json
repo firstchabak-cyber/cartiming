@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
+    "@tosspayments/payment-sdk": "^1.9.2",
     "lucide-react": "^1.16.0",
     "next": "14.2.35",
     "react": "^18",

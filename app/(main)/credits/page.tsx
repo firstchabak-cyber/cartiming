@@ -1,6 +1,8 @@
-import { Coins } from "lucide-react";
+import Link from "next/link";
+import { Coins, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import {
   getBalance,
   getFreeAnalysisRemaining,
@@ -67,9 +69,12 @@ export default async function CreditsPage() {
           </p>
         </div>
         {!lifetime && (
-          <p className="text-xs text-muted">
-            충전 기능은 곧 추가됩니다 (토스페이먼츠 연동 예정)
-          </p>
+          <Link href="/credits/charge" className="mt-2">
+            <Button size="sm" fullWidth>
+              <Plus className="h-4 w-4" />
+              캐시 충전하기
+            </Button>
+          </Link>
         )}
       </Card>
 
