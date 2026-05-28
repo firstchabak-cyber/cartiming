@@ -24,6 +24,7 @@ export function SaleRequestForm({
   const [mileageStr, setMileageStr] = useState(String(currentMileage));
   const [phone, setPhone] = useState("");
   const [kakao, setKakao] = useState("");
+  const [location, setLocation] = useState("");
   const [timing, setTiming] = useState("undecided");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -45,6 +46,11 @@ export function SaleRequestForm({
         setBusy(false);
         return;
       }
+      if (!location.trim()) {
+        setError("판매 지역을 입력해주세요 (딜러가 탁송비 계산에 사용)");
+        setBusy(false);
+        return;
+      }
       const res = await fetch("/api/sales", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,6 +59,7 @@ export function SaleRequestForm({
           currentMileage: Number(cleanedMileage),
           contactPhone: phone.trim(),
           contactKakao: kakao.trim() || undefined,
+          saleLocation: location.trim(),
           saleTiming: timing,
           saleReason: reason.trim() || undefined,
           additionalNotes: notes.trim() || undefined,
@@ -105,6 +112,16 @@ export function SaleRequestForm({
 
       <Card className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-foreground">매각 정보</p>
+        <Input
+          label="판매 지역 (필수)"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="예) 서울 강남구 / 경기 분당구"
+          maxLength={50}
+        />
+        <p className="text-[11px] text-muted">
+          딜러가 탁송비·교통비를 포함해서 입찰가를 산정합니다.
+        </p>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-foreground">희망 매각 시기</label>
           <select

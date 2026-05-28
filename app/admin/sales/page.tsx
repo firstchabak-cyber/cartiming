@@ -8,7 +8,7 @@ const STATUS_META: Record<
   string,
   { label: string; tone: "success" | "warning" | "neutral" | "danger" }
 > = {
-  pending: { label: "신규", tone: "warning" },
+  pending: { label: "🔴 승인 대기", tone: "danger" },
   bidding: { label: "입찰 중", tone: "warning" },
   matched: { label: "매칭됨", tone: "success" },
   completed: { label: "완료", tone: "neutral" },

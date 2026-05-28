@@ -28,7 +28,7 @@ export default async function DealerListingDetailPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, status, current_mileage, sale_timing, sale_reason, additional_notes, bidding_closes_at, created_at, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code)",
+      "id, status, current_mileage, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -43,6 +43,7 @@ export default async function DealerListingDetailPage({
     fuel_type: string | null;
     transmission: string | null;
     body_type: string | null;
+    vehicle_class: string | null;
     displacement_cc: number | null;
     options: string[] | null;
     damage_map: Record<string, string> | null;
@@ -52,10 +53,18 @@ export default async function DealerListingDetailPage({
     registered_at: string | null;
     vin: string | null;
     engine_code: string | null;
+    seating_capacity: number | null;
   } | null;
 
-  // 사진 (admin 클라이언트로 가져옴 — 딜러는 사진 직접 조회 권한 없음)
+  // 정비/사고 이력 + 사진 (admin client 로 조회 — 딜러는 다른 사용자 데이터 직접 접근 권한 없음)
   const admin = createAdminClient();
+  const { data: maintenance } = await admin
+    .from("vehicle_maintenance")
+    .select("category, part, description, performed_at, cost")
+    .eq("vehicle_id", sale.vehicle_id)
+    .order("performed_at", { ascending: false })
+    .limit(30);
+
   const { data: photoRows } = await admin
     .from("sale_photos")
     .select("id, storage_path")
@@ -82,6 +91,16 @@ export default async function DealerListingDetailPage({
   const damageEntries = Object.entries(damageMap).filter(
     ([, s]) => s && s !== "없음",
   );
+  const NON_DEPRECIATING = new Set([
+    "앞범퍼",
+    "뒷범퍼",
+    "휠(좌앞)",
+    "휠(우앞)",
+    "휠(좌뒤)",
+    "휠(우뒤)",
+  ]);
+  const countedDamage = damageEntries.filter(([p]) => !NON_DEPRECIATING.has(p));
+  const ignoredDamage = damageEntries.filter(([p]) => NON_DEPRECIATING.has(p));
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,6 +133,39 @@ export default async function DealerListingDetailPage({
         </Card>
       )}
 
+      <Card className="flex flex-col gap-2 border-primary/30 bg-primary/5">
+        <CardTitle className="text-sm">📍 매각 정보</CardTitle>
+        <dl className="grid grid-cols-2 gap-y-1 text-xs">
+          {sale.sale_location && (
+            <>
+              <dt className="text-muted">판매 지역</dt>
+              <dd className="text-right font-semibold">{sale.sale_location}</dd>
+            </>
+          )}
+          {sale.sale_timing && (
+            <>
+              <dt className="text-muted">희망 시기</dt>
+              <dd className="text-right">{sale.sale_timing}</dd>
+            </>
+          )}
+          {sale.sale_reason && (
+            <>
+              <dt className="text-muted">매도 사유</dt>
+              <dd className="text-right">{sale.sale_reason}</dd>
+            </>
+          )}
+          {sale.bidding_closes_at && (
+            <>
+              <dt className="text-muted">입찰 마감</dt>
+              <dd className="text-right">{formatDate(sale.bidding_closes_at)}</dd>
+            </>
+          )}
+        </dl>
+        <p className="text-[11px] text-muted">
+          탁송비·교통비를 판매 지역 고려해서 입찰가에 반영해주세요.
+        </p>
+      </Card>
+
       <Card className="flex flex-col gap-2">
         <CardTitle className="text-sm">차량 정보</CardTitle>
         <dl className="grid grid-cols-2 gap-y-1 text-xs">
@@ -123,28 +175,53 @@ export default async function DealerListingDetailPage({
           <dd className="text-right">{v?.transmission ?? "-"}</dd>
           <dt className="text-muted">배기량</dt>
           <dd className="text-right">{v?.displacement_cc ? `${v.displacement_cc}cc` : "-"}</dd>
+          <dt className="text-muted">차종</dt>
+          <dd className="text-right">{v?.vehicle_class ?? "-"}</dd>
           <dt className="text-muted">차체</dt>
           <dd className="text-right">{v?.body_type ?? "-"}</dd>
-          {v?.color && (<><dt className="text-muted">외장</dt><dd className="text-right">{v.color}</dd></>)}
-          {v?.interior_color && (<><dt className="text-muted">내장</dt><dd className="text-right">{v.interior_color}</dd></>)}
+          {v?.seating_capacity != null && (
+            <>
+              <dt className="text-muted">승차정원</dt>
+              <dd className="text-right">{v.seating_capacity}명</dd>
+            </>
+          )}
+          {v?.color && (<><dt className="text-muted">외장색</dt><dd className="text-right">{v.color}</dd></>)}
+          {v?.interior_color && (<><dt className="text-muted">내장색</dt><dd className="text-right">{v.interior_color}</dd></>)}
           {v?.registered_at && (<><dt className="text-muted">최초등록</dt><dd className="text-right">{v.registered_at}</dd></>)}
           {v?.engine_code && (<><dt className="text-muted">원동기</dt><dd className="text-right">{v.engine_code}</dd></>)}
           {v?.vin && (<><dt className="text-muted">차대번호</dt><dd className="text-right">{v.vin}</dd></>)}
         </dl>
       </Card>
 
-      {damageEntries.length > 0 && (
-        <Card className="flex flex-col gap-2">
-          <CardTitle className="text-sm">외판 상태</CardTitle>
-          <ul className="flex flex-wrap gap-1">
-            {damageEntries.map(([part, s]) => (
-              <li key={part} className="rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning">
-                {part} · {s}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
+      <Card className="flex flex-col gap-2">
+        <CardTitle className="text-sm">
+          🛠 외판 상태 ({damageEntries.length === 0 ? "무사고·무판금" : `${damageEntries.length}곳 손상`})
+        </CardTitle>
+        {countedDamage.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <p className="text-[11px] font-semibold text-danger">감가 반영 부위</p>
+            <ul className="flex flex-wrap gap-1">
+              {countedDamage.map(([part, s]) => (
+                <li key={part} className="rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger">
+                  {part} · {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {ignoredDamage.length > 0 && (
+          <div className="mt-1 flex flex-col gap-1">
+            <p className="text-[11px] font-semibold text-muted">감가 미반영 (앞/뒤 범퍼·휠)</p>
+            <ul className="flex flex-wrap gap-1">
+              {ignoredDamage.map(([part, s]) => (
+                <li key={part} className="rounded-full bg-muted/15 px-2 py-0.5 text-xs text-muted">
+                  {part} · {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
 
       {v?.options && v.options.length > 0 && (
         <Card className="flex flex-col gap-2">
@@ -153,9 +230,37 @@ export default async function DealerListingDetailPage({
         </Card>
       )}
 
+      {(maintenance?.length ?? 0) > 0 && (
+        <Card className="flex flex-col gap-2">
+          <CardTitle className="text-sm">
+            🔧 정비/사고 이력 ({maintenance!.length}건)
+          </CardTitle>
+          <ul className="flex flex-col divide-y divide-border text-xs">
+            {(maintenance as Array<{
+              category: string;
+              part: string;
+              description: string | null;
+              performed_at: string;
+              cost: number | null;
+            }>).map((m, i) => (
+              <li key={i} className="py-1.5">
+                <span className="text-muted">{m.performed_at}</span>
+                <span className="ml-2 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning">
+                  {m.category}
+                </span>
+                <span className="ml-2">{m.part}</span>
+                {m.description && (
+                  <span className="ml-1 text-muted">({m.description})</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {sale.additional_notes && (
         <Card className="flex flex-col gap-2">
-          <CardTitle className="text-sm">차주 메모</CardTitle>
+          <CardTitle className="text-sm">📝 차주 메모</CardTitle>
           <p className="text-xs text-muted">{sale.additional_notes}</p>
         </Card>
       )}

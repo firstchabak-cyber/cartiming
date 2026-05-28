@@ -9,6 +9,7 @@ const schema = z.object({
   currentMileage: z.number().int().nonnegative().optional(),
   contactPhone: z.string().trim().min(1),
   contactKakao: z.string().trim().optional(),
+  saleLocation: z.string().trim().min(1, "판매 지역을 입력해주세요"),
   saleTiming: z
     .enum(["immediate", "within_week", "within_month", "undecided"])
     .optional(),
@@ -82,23 +83,20 @@ export async function POST(request: Request) {
       .eq("id", parsed.data.vehicleId);
   }
 
-  // 입찰 마감 기본 2일 후
-  const biddingCloses = new Date();
-  biddingCloses.setDate(biddingCloses.getDate() + 2);
-
   const { data, error } = await supabase
     .from("sale_requests")
     .insert({
       vehicle_id: parsed.data.vehicleId,
       user_id: user.id,
-      status: "pending",
+      status: "pending", // 관리자 승인 대기
       current_mileage: parsed.data.currentMileage ?? null,
       contact_phone: parsed.data.contactPhone,
       contact_kakao: parsed.data.contactKakao ?? null,
+      sale_location: parsed.data.saleLocation,
       sale_timing: parsed.data.saleTiming ?? null,
       sale_reason: parsed.data.saleReason ?? null,
       additional_notes: parsed.data.additionalNotes ?? null,
-      bidding_closes_at: biddingCloses.toISOString(),
+      bidding_closes_at: null, // 승인 시 설정
     })
     .select("id")
     .single();

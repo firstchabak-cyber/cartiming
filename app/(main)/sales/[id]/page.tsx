@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/Badge";
 import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { SelectBidButton } from "@/components/sale/SelectBidButton";
 import { SalePhotoUploader } from "@/components/sale/SalePhotoUploader";
+import { BiddingCountdown } from "@/components/sale/BiddingCountdown";
 
 const STATUS_META: Record<
   string,
   { label: string; tone: "success" | "warning" | "neutral" | "danger" }
 > = {
-  pending: { label: "입찰 진행 중", tone: "warning" },
+  pending: { label: "관리자 검토 중", tone: "warning" },
   bidding: { label: "입찰 진행 중", tone: "warning" },
   matched: { label: "딜러 선택 완료", tone: "success" },
   completed: { label: "매각 완료", tone: "neutral" },
@@ -32,7 +33,7 @@ export default async function SaleStatusPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, vehicle_id, status, current_mileage, contact_phone, contact_kakao, sale_timing, sale_reason, additional_notes, bidding_closes_at, matched_at, completed_at, selected_bid_id, created_at",
+      "id, vehicle_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, approved_at, matched_at, completed_at, selected_bid_id, created_at",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -160,19 +161,33 @@ export default async function SaleStatusPage({
         </Card>
       )}
 
-      {(sale.status === "pending" || sale.status === "bidding") && (
-        <Card className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-foreground">진행 상황</p>
+      {sale.status === "pending" && (
+        <Card className="flex flex-col gap-2 border-warning/30 bg-warning/5">
+          <p className="text-sm font-semibold text-warning">
+            ⏳ 관리자 검토 중
+          </p>
           <p className="text-xs text-muted">
-            {bidsList.length === 0
-              ? "딜러에게 매물 정보가 전달되었습니다. 보통 1~3일 안에 입찰가가 도착합니다."
-              : `현재 ${bidsList.length}건의 입찰이 도착했습니다.`}
+            카타이밍 운영자가 신청 내용을 확인하고 있습니다.
+            보통 영업시간 내 1~3시간 안에 승인되며, 승인되면 즉시 48시간 입찰이 시작됩니다.
+          </p>
+          <p className="text-xs text-muted">
+            신청 후 사진을 추가해두시면 승인 후 바로 딜러들이 입찰 진행할 수 있어요.
+          </p>
+        </Card>
+      )}
+
+      {sale.status === "bidding" && (
+        <Card className="flex flex-col gap-2">
+          <p className="text-sm font-semibold text-foreground">
+            입찰 진행 중 ({bidsList.length}건 도착)
           </p>
           {sale.bidding_closes_at && (
-            <p className="text-xs text-muted">
-              입찰 마감: {formatDate(sale.bidding_closes_at)}
-            </p>
+            <BiddingCountdown closesAt={sale.bidding_closes_at} />
           )}
+          <p className="text-xs text-muted">
+            마음에 드는 입찰이 있으면 마감 전이라도 즉시 선택하실 수 있습니다.
+            한 번 선택하면 변경 불가하니 신중하게.
+          </p>
         </Card>
       )}
 

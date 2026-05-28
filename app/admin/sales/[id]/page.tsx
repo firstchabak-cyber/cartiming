@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/Badge";
 import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { AdminBidForm } from "@/components/admin/AdminBidForm";
 import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
+import { ApproveSaleButton } from "@/components/admin/ApproveSaleButton";
 
 const STATUS_META: Record<
   string,
   { label: string; tone: "success" | "warning" | "neutral" | "danger" }
 > = {
-  pending: { label: "신규", tone: "warning" },
+  pending: { label: "승인 대기", tone: "warning" },
   bidding: { label: "입찰 중", tone: "warning" },
   matched: { label: "매칭됨", tone: "success" },
   completed: { label: "완료", tone: "neutral" },
@@ -27,7 +28,7 @@ export default async function AdminSaleDetailPage({
   const { data: sale } = await admin
     .from("sale_requests")
     .select(
-      "id, vehicle_id, user_id, status, current_mileage, contact_phone, contact_kakao, sale_timing, sale_reason, additional_notes, bidding_closes_at, created_at, matched_at, completed_at, selected_bid_id",
+      "id, vehicle_id, user_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, approved_at, created_at, matched_at, completed_at, selected_bid_id",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -163,12 +164,20 @@ export default async function AdminSaleDetailPage({
       <Card className="flex flex-col gap-2">
         <CardTitle>매각 정보</CardTitle>
         <dl className="grid grid-cols-2 gap-y-1 text-xs">
+          <dt className="text-muted">판매 지역</dt>
+          <dd className="text-right font-semibold">{sale.sale_location ?? "-"}</dd>
           <dt className="text-muted">희망 시기</dt>
           <dd className="text-right">{sale.sale_timing ?? "-"}</dd>
           <dt className="text-muted">매도 사유</dt>
           <dd className="text-right">{sale.sale_reason ?? "-"}</dd>
           <dt className="text-muted">신청일</dt>
           <dd className="text-right">{formatDate(sale.created_at)}</dd>
+          {sale.approved_at && (
+            <>
+              <dt className="text-muted">승인일</dt>
+              <dd className="text-right">{formatDate(sale.approved_at)}</dd>
+            </>
+          )}
           {sale.bidding_closes_at && (
             <>
               <dt className="text-muted">입찰 마감</dt>
@@ -254,7 +263,11 @@ export default async function AdminSaleDetailPage({
         )}
       </Card>
 
-      {["pending", "bidding"].includes(sale.status) && (
+      {sale.status === "pending" && (
+        <ApproveSaleButton saleRequestId={sale.id} />
+      )}
+
+      {sale.status === "bidding" && (
         <AdminBidForm saleRequestId={sale.id} />
       )}
     </div>

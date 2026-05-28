@@ -63,9 +63,9 @@ export async function POST(
   if (!sale) {
     return NextResponse.json({ error: "매물을 찾을 수 없습니다" }, { status: 404 });
   }
-  if (!["pending", "bidding"].includes(sale.status)) {
+  if (sale.status !== "bidding") {
     return NextResponse.json(
-      { error: "입찰 가능한 매물이 아닙니다" },
+      { error: "입찰 가능한 매물이 아닙니다 (관리자 승인 대기 중이거나 마감됨)" },
       { status: 400 },
     );
   }
@@ -88,14 +88,6 @@ export async function POST(
       { error: "입찰 저장 실패", detail: error.message },
       { status: 500 },
     );
-  }
-
-  // 매물 상태를 bidding 으로 (첫 입찰이면)
-  if (sale.status === "pending") {
-    await supabase
-      .from("sale_requests")
-      .update({ status: "bidding" })
-      .eq("id", params.id);
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

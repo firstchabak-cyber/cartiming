@@ -33,13 +33,13 @@ export default async function DealerListingsPage() {
     );
   }
 
-  // 모든 활성 매물 (pending / bidding)
+  // 입찰 진행 중인 매물만 (관리자 승인 통과된 것)
   const { data: listings } = await supabase
     .from("sale_requests")
     .select(
       "id, status, current_mileage, sale_timing, additional_notes, bidding_closes_at, created_at, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, body_type, plate_number)",
     )
-    .in("status", ["pending", "bidding"])
+    .eq("status", "bidding")
     .order("created_at", { ascending: false });
 
   return (
