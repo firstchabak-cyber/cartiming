@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BusinessFooter } from "@/components/layout/BusinessFooter";
 
 export const metadata = {
   title: "개인정보처리방침 | 카타이밍",
@@ -6,6 +7,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
+    <div className="flex min-h-screen flex-col">
     <div className="mx-auto w-full max-w-3xl px-4 py-8 text-sm text-foreground">
       <Link href="/" className="text-xs text-primary hover:underline">
         ← 카타이밍 홈
@@ -136,6 +138,8 @@ export default function PrivacyPage() {
           </ul>
         </Section>
       </div>
+    </div>
+      <BusinessFooter />
     </div>
   );
 }
