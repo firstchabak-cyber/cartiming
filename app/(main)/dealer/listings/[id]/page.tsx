@@ -56,6 +56,13 @@ export default async function DealerListingDetailPage({
     seating_capacity: number | null;
   } | null;
 
+  // 핵심 정보 누락 체크
+  const missingInfo: string[] = [];
+  if (!v?.fuel_type) missingInfo.push("연료");
+  if (!v?.transmission) missingInfo.push("변속기");
+  if (!v?.body_type) missingInfo.push("차체");
+  if (!v?.vehicle_class) missingInfo.push("차종");
+
   // 정비/사고 이력 + 사진 (admin client 로 조회 — 딜러는 다른 사용자 데이터 직접 접근 권한 없음)
   const admin = createAdminClient();
   const { data: maintenance } = await admin
@@ -136,24 +143,20 @@ export default async function DealerListingDetailPage({
       <Card className="flex flex-col gap-2 border-primary/30 bg-primary/5">
         <CardTitle className="text-sm">📍 매각 정보</CardTitle>
         <dl className="grid grid-cols-2 gap-y-1 text-xs">
-          {sale.sale_location && (
-            <>
-              <dt className="text-muted">판매 지역</dt>
-              <dd className="text-right font-semibold">{sale.sale_location}</dd>
-            </>
-          )}
-          {sale.sale_timing && (
-            <>
-              <dt className="text-muted">희망 시기</dt>
-              <dd className="text-right">{sale.sale_timing}</dd>
-            </>
-          )}
-          {sale.sale_reason && (
-            <>
-              <dt className="text-muted">매도 사유</dt>
-              <dd className="text-right">{sale.sale_reason}</dd>
-            </>
-          )}
+          <dt className="text-muted">판매 지역</dt>
+          <dd
+            className={
+              sale.sale_location
+                ? "text-right font-semibold text-foreground"
+                : "text-right text-warning"
+            }
+          >
+            {sale.sale_location ?? "미입력 (차주에게 문의)"}
+          </dd>
+          <dt className="text-muted">희망 시기</dt>
+          <dd className="text-right">{sale.sale_timing ?? "미입력"}</dd>
+          <dt className="text-muted">매도 사유</dt>
+          <dd className="text-right">{sale.sale_reason ?? "미입력"}</dd>
           {sale.bidding_closes_at && (
             <>
               <dt className="text-muted">입찰 마감</dt>
@@ -161,35 +164,73 @@ export default async function DealerListingDetailPage({
             </>
           )}
         </dl>
-        <p className="text-[11px] text-muted">
-          탁송비·교통비를 판매 지역 고려해서 입찰가에 반영해주세요.
-        </p>
+        {sale.sale_location && (
+          <p className="text-[11px] text-muted">
+            탁송비·교통비를 판매 지역 고려해서 입찰가에 반영해주세요.
+          </p>
+        )}
+      </Card>
+
+      {missingInfo.length > 0 && (
+        <Card className="border-warning/30 bg-warning/5">
+          <p className="text-sm font-semibold text-warning">
+            ℹ️ 차주가 미입력한 정보: {missingInfo.join(", ")}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            정확한 입찰가 산정에 영향이 있으니, 의문 시 입찰 비고란에 "정보 확인 후 가격 조정 가능" 명시
+          </p>
+        </Card>
+      )}
+
+      <Card className="flex flex-col gap-2">
+        <CardTitle className="text-sm">차량 기본 정보</CardTitle>
+        <dl className="grid grid-cols-2 gap-y-1 text-xs">
+          <dt className="text-muted">연료</dt>
+          <dd className={`text-right ${!v?.fuel_type ? "text-warning" : ""}`}>
+            {v?.fuel_type ?? "미입력"}
+          </dd>
+          <dt className="text-muted">변속기</dt>
+          <dd className={`text-right ${!v?.transmission ? "text-warning" : ""}`}>
+            {v?.transmission ?? "미입력"}
+          </dd>
+          <dt className="text-muted">배기량</dt>
+          <dd className={`text-right ${!v?.displacement_cc ? "text-warning" : ""}`}>
+            {v?.displacement_cc ? `${v.displacement_cc}cc` : "미입력"}
+          </dd>
+          <dt className="text-muted">차종</dt>
+          <dd className={`text-right ${!v?.vehicle_class ? "text-warning" : ""}`}>
+            {v?.vehicle_class ?? "미입력"}
+          </dd>
+          <dt className="text-muted">차체</dt>
+          <dd className={`text-right ${!v?.body_type ? "text-warning" : ""}`}>
+            {v?.body_type ?? "미입력"}
+          </dd>
+          <dt className="text-muted">승차정원</dt>
+          <dd className="text-right">
+            {v?.seating_capacity != null ? `${v.seating_capacity}명` : "미입력"}
+          </dd>
+        </dl>
       </Card>
 
       <Card className="flex flex-col gap-2">
-        <CardTitle className="text-sm">차량 정보</CardTitle>
+        <CardTitle className="text-sm">색상 / 등록 정보</CardTitle>
         <dl className="grid grid-cols-2 gap-y-1 text-xs">
-          <dt className="text-muted">연료</dt>
-          <dd className="text-right">{v?.fuel_type ?? "-"}</dd>
-          <dt className="text-muted">변속기</dt>
-          <dd className="text-right">{v?.transmission ?? "-"}</dd>
-          <dt className="text-muted">배기량</dt>
-          <dd className="text-right">{v?.displacement_cc ? `${v.displacement_cc}cc` : "-"}</dd>
-          <dt className="text-muted">차종</dt>
-          <dd className="text-right">{v?.vehicle_class ?? "-"}</dd>
-          <dt className="text-muted">차체</dt>
-          <dd className="text-right">{v?.body_type ?? "-"}</dd>
-          {v?.seating_capacity != null && (
-            <>
-              <dt className="text-muted">승차정원</dt>
-              <dd className="text-right">{v.seating_capacity}명</dd>
-            </>
-          )}
-          {v?.color && (<><dt className="text-muted">외장색</dt><dd className="text-right">{v.color}</dd></>)}
-          {v?.interior_color && (<><dt className="text-muted">내장색</dt><dd className="text-right">{v.interior_color}</dd></>)}
-          {v?.registered_at && (<><dt className="text-muted">최초등록</dt><dd className="text-right">{v.registered_at}</dd></>)}
-          {v?.engine_code && (<><dt className="text-muted">원동기</dt><dd className="text-right">{v.engine_code}</dd></>)}
-          {v?.vin && (<><dt className="text-muted">차대번호</dt><dd className="text-right">{v.vin}</dd></>)}
+          <dt className="text-muted">외장색</dt>
+          <dd className="text-right">{v?.color ?? "미입력"}</dd>
+          <dt className="text-muted">내장색</dt>
+          <dd className="text-right">{v?.interior_color ?? "미입력"}</dd>
+          <dt className="text-muted">최초등록일</dt>
+          <dd className="text-right">{v?.registered_at ?? "미입력"}</dd>
+        </dl>
+      </Card>
+
+      <Card className="flex flex-col gap-2">
+        <CardTitle className="text-sm">식별 정보</CardTitle>
+        <dl className="grid grid-cols-2 gap-y-1 text-xs">
+          <dt className="text-muted">원동기 형식</dt>
+          <dd className="text-right font-mono">{v?.engine_code ?? "미입력"}</dd>
+          <dt className="text-muted">차대번호 (VIN)</dt>
+          <dd className="text-right font-mono break-all">{v?.vin ?? "미입력"}</dd>
         </dl>
       </Card>
 
