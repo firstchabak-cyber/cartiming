@@ -18,11 +18,8 @@ export const BUSINESS_INFO = {
   /** 사업자등록번호 */
   businessRegNumber: "513-64-26319",
 
-  /**
-   * 통신판매업 신고번호
-   * ⚠️ 아직 미신청 — 정부24 (www.gov.kr) "통신판매업 신고" 진행 후 발급받은 번호로 교체.
-   */
-  mailOrderRegNumber: "신청 진행 중 (성남시)",
+  /** 통신판매업 신고번호 */
+  mailOrderRegNumber: "제 2020-성남수정-1193호",
 
   /** 영업소 소재지 주소 */
   address: "경기도 성남시 수정구 위례서일로3길 14-13, 1층 (창곡동)",
