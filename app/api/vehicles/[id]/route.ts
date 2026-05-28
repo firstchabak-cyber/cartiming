@@ -69,6 +69,7 @@ const patchSchema = z
         z.enum(DAMAGE_STATES as unknown as [string, ...string[]]),
       )
       .optional(),
+    status: z.enum(["active", "sold"]).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, {
     message: "수정할 항목이 없습니다",
@@ -105,9 +106,17 @@ export async function PATCH(
     );
   }
 
+  const updatePayload: Record<string, unknown> = { ...parsed.data };
+  // 상태 전환 시 sold_at 자동 처리
+  if (parsed.data.status === "sold") {
+    updatePayload.sold_at = new Date().toISOString();
+  } else if (parsed.data.status === "active") {
+    updatePayload.sold_at = null;
+  }
+
   const { data, error } = await supabase
     .from("vehicles")
-    .update(parsed.data)
+    .update(updatePayload)
     .eq("id", params.id)
     .eq("user_id", user.id)
     .select("id")

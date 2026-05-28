@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const { data: vehicle, error: vehicleError } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, status, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", parsed.data.vehicleId)
     .eq("user_id", user.id)
@@ -61,6 +61,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "차량을 찾을 수 없습니다" },
       { status: 404 },
+    );
+  }
+
+  if ((vehicle as { status?: string }).status === "sold") {
+    return NextResponse.json(
+      { error: "매각 완료된 차량은 분석할 수 없습니다" },
+      { status: 400 },
     );
   }
 

@@ -168,7 +168,8 @@ export async function GET(request: Request) {
     .from("vehicles")
     .select(
       "id, user_id, manufacturer, model, trim, year, mileage, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
-    );
+    )
+    .eq("status", "active");
 
   if (error) {
     return NextResponse.json(

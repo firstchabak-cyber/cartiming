@@ -13,6 +13,7 @@ export default async function AnalysisPage() {
         .from("vehicles")
         .select("id, manufacturer, model, trim, year, mileage, plate_number")
         .eq("user_id", user.id)
+        .eq("status", "active")
         .order("created_at", { ascending: false })
     : { data: null };
 

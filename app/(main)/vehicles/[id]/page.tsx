@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DeleteVehicleButton } from "@/components/vehicle/DeleteVehicleButton";
 import { DeleteMaintenanceButton } from "@/components/vehicle/DeleteMaintenanceButton";
+import { MarkAsSoldButton } from "@/components/vehicle/MarkAsSoldButton";
+import { RestoreVehicleButton } from "@/components/vehicle/RestoreVehicleButton";
 import { PhotoGallery } from "@/components/vehicle/PhotoGallery";
 import { CATEGORY_TONE } from "@/lib/constants/maintenance";
 import type { MaintenanceCategory } from "@/lib/constants/maintenance";
@@ -51,7 +53,7 @@ export default async function VehicleDetailPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, damage_map, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, options, damage_map, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -129,10 +131,18 @@ export default async function VehicleDetailPage({
     }),
   );
 
+  const isSold = vehicle.status === "sold";
+  const carLabel = `${vehicle.manufacturer} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ""}`;
+
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-start justify-between gap-3">
-        <div>
+        <div className="flex flex-col gap-1">
+          {isSold && (
+            <Badge tone="neutral">
+              매각 완료 {vehicle.sold_at ? `· ${formatDate(vehicle.sold_at)}` : ""}
+            </Badge>
+          )}
           <h1 className="text-xl font-bold">
             {vehicle.manufacturer} {vehicle.model}
             {vehicle.trim ? ` ${vehicle.trim}` : ""}
@@ -142,18 +152,25 @@ export default async function VehicleDetailPage({
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href={`/vehicles/${vehicle.id}/edit`}>
-            <Button variant="outline" size="sm">
-              <Pencil className="h-4 w-4" />
-              수정
-            </Button>
-          </Link>
+          {!isSold && (
+            <Link href={`/vehicles/${vehicle.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="h-4 w-4" />
+                수정
+              </Button>
+            </Link>
+          )}
+          {isSold && <RestoreVehicleButton vehicleId={vehicle.id} />}
           <DeleteVehicleButton
             vehicleId={vehicle.id}
             label={`${vehicle.manufacturer} ${vehicle.model}`}
           />
         </div>
       </header>
+
+      {!isSold && (
+        <MarkAsSoldButton vehicleId={vehicle.id} carLabel={carLabel} />
+      )}
 
       {photos.length > 0 && <PhotoGallery photos={photos} />}
 

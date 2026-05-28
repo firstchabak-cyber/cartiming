@@ -19,6 +19,7 @@ export default async function DashboardPage() {
         .from("vehicles")
         .select("id, manufacturer, model, trim, year, mileage, plate_number")
         .eq("user_id", user.id)
+        .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(3)
     : { data: null };
