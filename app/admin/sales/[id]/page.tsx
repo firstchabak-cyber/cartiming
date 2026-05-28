@@ -37,10 +37,18 @@ export default async function AdminSaleDetailPage({
   const { data: vehicle } = await admin
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", sale.vehicle_id)
     .maybeSingle();
+
+  // 정비/사고 이력
+  const { data: maintenance } = await admin
+    .from("vehicle_maintenance")
+    .select("category, part, description, performed_at, cost")
+    .eq("vehicle_id", sale.vehicle_id)
+    .order("performed_at", { ascending: false })
+    .limit(30);
 
   const { data: photoRows } = await admin
     .from("sale_photos")
@@ -78,6 +86,16 @@ export default async function AdminSaleDetailPage({
   const damageEntries = Object.entries(damageMap).filter(
     ([, s]) => s && s !== "없음",
   );
+  const NON_DEPRECIATING = new Set([
+    "앞범퍼",
+    "뒷범퍼",
+    "휠(좌앞)",
+    "휠(우앞)",
+    "휠(좌뒤)",
+    "휠(우뒤)",
+  ]);
+  const countedDamage = damageEntries.filter(([p]) => !NON_DEPRECIATING.has(p));
+  const ignoredDamage = damageEntries.filter(([p]) => NON_DEPRECIATING.has(p));
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,12 +134,30 @@ export default async function AdminSaleDetailPage({
                 <dd className="text-right">{vehicle.fuel_type ?? "-"}</dd>
                 <dt className="text-muted">변속기</dt>
                 <dd className="text-right">{vehicle.transmission ?? "-"}</dd>
+                <dt className="text-muted">배기량</dt>
+                <dd className="text-right">
+                  {vehicle.displacement_cc ? `${vehicle.displacement_cc}cc` : "-"}
+                </dd>
+                <dt className="text-muted">차종</dt>
+                <dd className="text-right">{vehicle.vehicle_class ?? "-"}</dd>
                 <dt className="text-muted">차체</dt>
                 <dd className="text-right">{vehicle.body_type ?? "-"}</dd>
+                {vehicle.seating_capacity != null && (
+                  <>
+                    <dt className="text-muted">승차정원</dt>
+                    <dd className="text-right">{vehicle.seating_capacity}명</dd>
+                  </>
+                )}
                 {vehicle.color && (
                   <>
-                    <dt className="text-muted">외장</dt>
+                    <dt className="text-muted">외장색</dt>
                     <dd className="text-right">{vehicle.color}</dd>
+                  </>
+                )}
+                {vehicle.interior_color && (
+                  <>
+                    <dt className="text-muted">내장색</dt>
+                    <dd className="text-right">{vehicle.interior_color}</dd>
                   </>
                 )}
                 {vehicle.registered_at && (
@@ -130,7 +166,41 @@ export default async function AdminSaleDetailPage({
                     <dd className="text-right">{vehicle.registered_at}</dd>
                   </>
                 )}
+                {vehicle.engine_code && (
+                  <>
+                    <dt className="text-muted">원동기</dt>
+                    <dd className="text-right">{vehicle.engine_code}</dd>
+                  </>
+                )}
+                {vehicle.vin && (
+                  <>
+                    <dt className="text-muted">차대번호</dt>
+                    <dd className="text-right break-all">{vehicle.vin}</dd>
+                  </>
+                )}
               </dl>
+              {vehicle.options && vehicle.options.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  <p className="text-xs font-medium text-muted">옵션</p>
+                  <p className="text-xs text-foreground">
+                    {(vehicle.options as string[]).join(" · ")}
+                  </p>
+                </div>
+              )}
+              {vehicle.loan_principal != null && (
+                <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 p-2 text-xs">
+                  <p className="font-semibold text-warning">⚠️ 대출 차량</p>
+                  <p className="text-muted">
+                    원금 {vehicle.loan_principal.toLocaleString("ko-KR")}원 ·{" "}
+                    {vehicle.loan_months}개월 · 연 {vehicle.loan_apr}%
+                  </p>
+                  {vehicle.loan_started_at && (
+                    <p className="text-muted">
+                      실행일 {vehicle.loan_started_at}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
         </Card>
@@ -208,16 +278,71 @@ export default async function AdminSaleDetailPage({
         </Card>
       )}
 
-      {damageEntries.length > 0 && (
-        <Card>
-          <CardTitle>외판 상태</CardTitle>
-          <ul className="mt-2 flex flex-wrap gap-1">
-            {damageEntries.map(([part, s]) => (
-              <li
-                key={part}
-                className="rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning"
-              >
-                {part} · {s}
+      <Card className="flex flex-col gap-2">
+        <CardTitle>
+          🛠 외판 상태 (
+          {damageEntries.length === 0 ? "무사고·무판금" : `${damageEntries.length}곳 손상`}
+          )
+        </CardTitle>
+        {countedDamage.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <p className="text-[11px] font-semibold text-danger">감가 반영 부위</p>
+            <ul className="flex flex-wrap gap-1">
+              {countedDamage.map(([part, s]) => (
+                <li
+                  key={part}
+                  className="rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger"
+                >
+                  {part} · {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {ignoredDamage.length > 0 && (
+          <div className="mt-1 flex flex-col gap-1">
+            <p className="text-[11px] font-semibold text-muted">
+              감가 미반영 (앞/뒤 범퍼·휠)
+            </p>
+            <ul className="flex flex-wrap gap-1">
+              {ignoredDamage.map(([part, s]) => (
+                <li
+                  key={part}
+                  className="rounded-full bg-muted/15 px-2 py-0.5 text-xs text-muted"
+                >
+                  {part} · {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
+
+      {(maintenance?.length ?? 0) > 0 && (
+        <Card className="flex flex-col gap-2">
+          <CardTitle>🔧 정비/사고 이력 ({maintenance!.length}건)</CardTitle>
+          <ul className="flex flex-col divide-y divide-border text-xs">
+            {(maintenance as Array<{
+              category: string;
+              part: string;
+              description: string | null;
+              performed_at: string;
+              cost: number | null;
+            }>).map((m, i) => (
+              <li key={i} className="py-1.5">
+                <span className="text-muted">{m.performed_at}</span>
+                <span className="ml-2 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning">
+                  {m.category}
+                </span>
+                <span className="ml-2">{m.part}</span>
+                {m.description && (
+                  <span className="ml-1 text-muted">({m.description})</span>
+                )}
+                {m.cost != null && (
+                  <span className="ml-1 text-muted">
+                    · {m.cost.toLocaleString("ko-KR")}원
+                  </span>
+                )}
               </li>
             ))}
           </ul>
