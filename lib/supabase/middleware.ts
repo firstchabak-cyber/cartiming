@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
   const isLegalRoute =
     pathname.startsWith("/privacy") || pathname.startsWith("/terms");
   const isPublic = pathname === "/" || isAuthRoute || isLegalRoute;
+  // /admin 은 별도 layout 에서 관리자 권한 체크하므로 미들웨어는 로그인만 강제
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

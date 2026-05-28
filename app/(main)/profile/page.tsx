@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, LogOut, Pencil, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
+import { isAdmin } from "@/lib/admin/check";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -135,6 +137,14 @@ export default function ProfilePage() {
         </div>
         <ThemeToggle />
       </Card>
+
+      {isAdmin(profile?.email ?? null) && (
+        <Link href="/admin">
+          <Button variant="outline" fullWidth>
+            🛠 관리자 페이지
+          </Button>
+        </Link>
+      )}
 
       <Button variant="outline" fullWidth onClick={logout}>
         <LogOut className="h-4 w-4" />
