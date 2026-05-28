@@ -1,42 +1,50 @@
-<!-- C v7: 주식 캔들스틱 차트 (상승/하락 봉) + 큰 차 + 끝 화살표 -->
+<!-- C v8: 지그재그 우상향 라인 차트 + 큰 차 + 끝 화살표 -->
 <svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgC" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#3b82f6"/>
       <stop offset="100%" stop-color="#1e40af"/>
     </linearGradient>
+    <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="lineGlowC" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   <rect width="140" height="140" rx="28" fill="url(#bgC)"/>
 
-  <!-- BACKGROUND grid (상단만) -->
+  <!-- BACKGROUND grid lines (상단 영역만) -->
   <line x1="10" y1="18" x2="130" y2="18" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
   <line x1="10" y1="36" x2="130" y2="36" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
   <line x1="10" y1="54" x2="130" y2="54" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
 
-  <!-- 캔들스틱 1: 하락 (음봉, 빨강) -->
-  <line x1="20" y1="22" x2="20" y2="52" stroke="#fca5a5" stroke-width="1.5"/>
-  <rect x="15" y="32" width="10" height="16" fill="#ef4444"/>
+  <!-- 지그재그 차트 영역 채움 (글로우 효과) -->
+  <path d="M 10 60 L 10 50 L 30 22 L 55 42 L 80 18 L 105 35 L 128 10 L 130 10 L 130 60 Z"
+        fill="url(#trendFill)"/>
 
-  <!-- 캔들스틱 2: 상승 (양봉, 주황) -->
-  <line x1="42" y1="14" x2="42" y2="44" stroke="#fde68a" stroke-width="1.5"/>
-  <rect x="37" y="20" width="10" height="20" fill="#f59e0b"/>
+  <!-- 지그재그 라인: 위↑ 아래↓ 위↑ 아래↓ 위↑↑ -->
+  <polyline points="10,50 30,22 55,42 80,18 105,35 128,10"
+            fill="none" stroke="#f59e0b" stroke-width="3.8"
+            stroke-linecap="round" stroke-linejoin="round"
+            filter="url(#lineGlowC)"/>
 
-  <!-- 캔들스틱 3: 하락 (음봉, 빨강) -->
-  <line x1="64" y1="24" x2="64" y2="54" stroke="#fca5a5" stroke-width="1.5"/>
-  <rect x="59" y="34" width="10" height="14" fill="#ef4444"/>
+  <!-- 각 꺾이는 지점 데이터 포인트 -->
+  <circle cx="10"  cy="50" r="2.5" fill="#fef3c7"/>
+  <circle cx="30"  cy="22" r="2.5" fill="#fef3c7"/>
+  <circle cx="55"  cy="42" r="2.5" fill="#fef3c7"/>
+  <circle cx="80"  cy="18" r="2.5" fill="#fef3c7"/>
+  <circle cx="105" cy="35" r="2.5" fill="#fef3c7"/>
 
-  <!-- 캔들스틱 4: 상승 (양봉, 주황) -->
-  <line x1="86" y1="12" x2="86" y2="40" stroke="#fde68a" stroke-width="1.5"/>
-  <rect x="81" y="18" width="10" height="18" fill="#f59e0b"/>
-
-  <!-- 캔들스틱 5: 강한 상승 (큰 양봉, 주황) -->
-  <line x1="108" y1="8" x2="108" y2="34" stroke="#fde68a" stroke-width="1.5"/>
-  <rect x="103" y="12" width="10" height="18" fill="#f59e0b"/>
-
-  <!-- 우상향 화살표 (오른쪽 끝, 가격 목표) — 크게 -->
-  <g transform="translate(127, 12)">
-    <polygon points="-4,-7 -4,7 7,0" fill="#fbbf24"/>
-    <line x1="-14" y1="0" x2="-4" y2="0" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+  <!-- 끝점 화살표 (오른쪽 상단 최고점) -->
+  <g transform="translate(128, 10)">
+    <circle cx="0" cy="0" r="6" fill="#fbbf24"/>
+    <polygon points="-2,-8 8,-2 -2,8" fill="#fbbf24"/>
   </g>
 
   <!-- FOREGROUND car — 크게, 하단 -->
