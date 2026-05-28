@@ -61,6 +61,9 @@ alter table public.payments enable row level security;
 drop policy if exists "payments_select_own" on public.payments;
 create policy "payments_select_own" on public.payments
   for select using (auth.uid() = user_id);
+drop policy if exists "payments_insert_own" on public.payments;
+create policy "payments_insert_own" on public.payments
+  for insert with check (auth.uid() = user_id);
 
 -- ============================================================
 -- 4) vehicles 에 status / sold_at 컬럼 추가
