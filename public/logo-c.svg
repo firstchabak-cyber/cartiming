@@ -1,12 +1,16 @@
-<!-- C v2: 측면 차 + 우상향 추세 (다듬은 버전) -->
+<!-- C v3: 차트가 차 뒤 배경으로, 차가 우상향 추세를 타고 있는 느낌 -->
 <svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgC" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#3b82f6"/>
       <stop offset="100%" stop-color="#1e40af"/>
     </linearGradient>
-    <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+    <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="lineGlowC" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -15,57 +19,64 @@
   </defs>
   <rect width="140" height="140" rx="28" fill="url(#bgC)"/>
 
-  <!-- chart background grid (subtle) -->
-  <line x1="22" y1="92" x2="118" y2="92" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-  <line x1="22" y1="72" x2="118" y2="72" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-  <line x1="22" y1="52" x2="118" y2="52" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <!-- BACKGROUND chart grid -->
+  <line x1="14" y1="36" x2="126" y2="36" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="14" y1="58" x2="126" y2="58" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="14" y1="80" x2="126" y2="80" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="14" y1="102" x2="126" y2="102" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 
-  <!-- uptrend line with data points -->
-  <polyline points="28,98 50,86 72,68 94,50 116,32"
+  <!-- BACKGROUND filled area under trend (sunset glow) -->
+  <path d="M 14 124 L 14 102 L 38 92 L 62 78 L 86 56 L 126 26 L 126 124 Z"
+        fill="url(#trendFill)"/>
+
+  <!-- BACKGROUND trend line — going up-right, behind car -->
+  <polyline points="14,102 38,92 62,78 86,56 126,26"
             fill="none" stroke="#f59e0b" stroke-width="3.5"
             stroke-linecap="round" stroke-linejoin="round"
-            filter="url(#lineGlow)"/>
-  <!-- data points -->
-  <circle cx="28" cy="98" r="3" fill="#f59e0b"/>
-  <circle cx="50" cy="86" r="3" fill="#f59e0b"/>
-  <circle cx="72" cy="68" r="3" fill="#f59e0b"/>
-  <circle cx="94" cy="50" r="3" fill="#f59e0b"/>
-  <!-- arrow head at end -->
-  <polygon points="116,32 108,30 112,38" fill="#f59e0b"/>
-  <circle cx="116" cy="32" r="5" fill="#f59e0b"/>
+            filter="url(#lineGlowC)"/>
+  <!-- chart data points -->
+  <circle cx="14" cy="102" r="2.5" fill="#fef3c7"/>
+  <circle cx="38" cy="92" r="2.5" fill="#fef3c7"/>
+  <circle cx="62" cy="78" r="2.5" fill="#fef3c7"/>
+  <circle cx="86" cy="56" r="2.5" fill="#fef3c7"/>
+  <!-- endpoint arrow at top-right -->
+  <polygon points="126,26 116,22 120,32" fill="#fbbf24"/>
+  <circle cx="126" cy="26" r="5" fill="#fbbf24"/>
 
-  <!-- side view car (sleeker, lower profile) -->
-  <!-- main body (sedan silhouette) -->
-  <path d="M 18 112
-           L 18 105
-           Q 18 100 23 100
-           L 30 100
-           Q 33 90 40 86
-           L 60 80
-           Q 70 78 80 80
-           L 95 86
-           Q 100 90 102 100
-           L 112 100
-           Q 117 100 117 105
-           L 117 112
+  <!-- FOREGROUND car (side view, sleek sedan) — positioned center-bottom -->
+  <!-- shadow underneath -->
+  <ellipse cx="70" cy="122" rx="48" ry="3" fill="rgba(0,0,0,0.25)"/>
+  <!-- body -->
+  <path d="M 22 118
+           L 22 110
+           Q 22 105 27 105
+           L 34 105
+           Q 37 95 44 91
+           L 62 86
+           Q 70 84 78 86
+           L 96 91
+           Q 103 95 106 105
+           L 113 105
+           Q 118 105 118 110
+           L 118 118
            Z"
         fill="white"/>
-  <!-- windows (side glass) -->
-  <path d="M 38 95
-           Q 41 88 47 86
-           L 60 83
-           Q 70 81 78 83
-           L 90 86
-           Q 95 88 97 95
+  <!-- window glass -->
+  <path d="M 42 100
+           Q 45 93 51 91
+           L 62 88
+           Q 70 87 78 88
+           L 89 91
+           Q 95 93 98 100
            Z"
         fill="#1e3a8a"/>
-  <!-- door line (subtle) -->
-  <line x1="67" y1="85" x2="67" y2="100" stroke="rgba(30,58,138,0.3)" stroke-width="1.2"/>
+  <!-- door line -->
+  <line x1="69" y1="90" x2="69" y2="105" stroke="rgba(30,58,138,0.3)" stroke-width="1.2"/>
   <!-- wheels -->
-  <circle cx="38" cy="112" r="9" fill="#0f172a"/>
-  <circle cx="38" cy="112" r="3.5" fill="white"/>
-  <circle cx="102" cy="112" r="9" fill="#0f172a"/>
-  <circle cx="102" cy="112" r="3.5" fill="white"/>
-  <!-- headlight (front, right side) -->
-  <circle cx="113" cy="103" r="2" fill="#fbbf24"/>
+  <circle cx="40" cy="118" r="8.5" fill="#0f172a"/>
+  <circle cx="40" cy="118" r="3" fill="white"/>
+  <circle cx="100" cy="118" r="8.5" fill="#0f172a"/>
+  <circle cx="100" cy="118" r="3" fill="white"/>
+  <!-- headlight -->
+  <circle cx="114" cy="108" r="1.8" fill="#fbbf24"/>
 </svg>
