@@ -28,7 +28,7 @@ export default async function DealerListingDetailPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, status, current_mileage, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
+      "id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, selected_bid_id, matched_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -109,6 +109,12 @@ export default async function DealerListingDetailPage({
   const countedDamage = damageEntries.filter(([p]) => !NON_DEPRECIATING.has(p));
   const ignoredDamage = damageEntries.filter(([p]) => NON_DEPRECIATING.has(p));
 
+  // 매칭 결과 판단
+  const isMatched = sale.status === "matched" || sale.status === "completed";
+  const iWasSelected =
+    isMatched && myBid && sale.selected_bid_id === myBid.id;
+  const iWasRejected = isMatched && myBid && sale.selected_bid_id !== myBid.id;
+
   return (
     <div className="flex flex-col gap-4">
       <header>
@@ -117,6 +123,60 @@ export default async function DealerListingDetailPage({
         </Link>
         <h1 className="mt-1 text-xl font-bold">매물 상세</h1>
       </header>
+
+      {iWasSelected && (
+        <Card className="flex flex-col gap-3 border-success bg-success/10">
+          <p className="text-base font-bold text-success">
+            🎉 축하합니다! 이 매물에 선정되셨습니다
+          </p>
+          <div className="rounded-lg bg-background p-3">
+            <p className="text-sm font-semibold text-foreground">차주 연락처</p>
+            <p className="mt-2 text-sm">
+              📞 휴대폰:{" "}
+              <a
+                href={`tel:${sale.contact_phone}`}
+                className="text-primary underline"
+              >
+                {sale.contact_phone}
+              </a>
+            </p>
+            {sale.contact_kakao && (
+              <p className="mt-1 text-sm">💬 카카오톡: {sale.contact_kakao}</p>
+            )}
+            {sale.sale_location && (
+              <p className="mt-1 text-sm">📍 판매 지역: {sale.sale_location}</p>
+            )}
+          </div>
+          <div className="rounded-lg bg-background p-3 text-xs text-muted">
+            <p className="font-semibold text-foreground">다음 단계</p>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+              <li>24~48시간 이내 차주에게 연락해서 미팅 약속 잡기</li>
+              <li>차량 실사 + 사고이력·정비기록 확인 + 최종 가격 확정</li>
+              <li>계약서 작성 + 차량 인도 + 입금</li>
+              <li>명의이전 진행 (15일 이내)</li>
+            </ol>
+            <p className="mt-2">
+              매각 완료 후 카타이밍에 수수료 정산 (매각가의 1.5%).
+            </p>
+          </div>
+          {sale.matched_at && (
+            <p className="text-[11px] text-muted">
+              선정일: {formatDate(sale.matched_at)}
+            </p>
+          )}
+        </Card>
+      )}
+
+      {iWasRejected && (
+        <Card className="border-muted bg-muted/10">
+          <p className="text-sm font-semibold text-muted">
+            😔 다른 딜러가 선정되었습니다
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            다음 기회를 노려보세요. 매물 리스트에서 새 매물을 확인할 수 있습니다.
+          </p>
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-2">
         {v?.plate_number && (

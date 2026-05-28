@@ -46,9 +46,14 @@ export default async function DealerListingsPage() {
     <div className="flex flex-col gap-4">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">매물 리스트</h1>
-        <Link href="/dealer/register" className="text-xs text-primary underline">
-          내 딜러 정보
-        </Link>
+        <div className="flex gap-3 text-xs">
+          <Link href="/dealer/bids" className="text-primary underline">
+            내 입찰 내역
+          </Link>
+          <Link href="/dealer/register" className="text-primary underline">
+            내 딜러 정보
+          </Link>
+        </div>
       </header>
 
       {!dealer.verified && (
