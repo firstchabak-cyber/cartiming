@@ -8,6 +8,7 @@ import { SelectBidButton } from "@/components/sale/SelectBidButton";
 import { SalePhotoUploader } from "@/components/sale/SalePhotoUploader";
 import { BiddingCountdown } from "@/components/sale/BiddingCountdown";
 import { ReviewForm } from "@/components/sale/ReviewForm";
+import { SaleProgressTimeline } from "@/components/sale/SaleProgressTimeline";
 
 const STATUS_META: Record<
   string,
@@ -154,6 +155,19 @@ export default async function SaleStatusPage({
           </CardDescription>
         </Card>
       )}
+
+      <SaleProgressTimeline
+        sale={{
+          status: sale.status,
+          created_at: sale.created_at,
+          approved_at: sale.approved_at,
+          bidding_closes_at: sale.bidding_closes_at,
+          matched_at: sale.matched_at,
+          adjusted_at: sale.adjusted_at,
+          completed_at: sale.completed_at,
+        }}
+        bidCount={bidsList.length}
+      />
 
       {sale.status === "matched" && selectedBid && sale.final_price && (
         <Card className="flex flex-col gap-3 border-warning bg-warning/5">
