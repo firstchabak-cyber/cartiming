@@ -1,9 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from "@/lib/constants/app";
+import { createClient } from "@/lib/supabase/server";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // 이미 로그인된 사용자는 바로 대시보드로
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   return (
     <Container className="flex min-h-screen flex-col justify-between py-16">
       <header className="flex flex-col items-center gap-3 text-center">
