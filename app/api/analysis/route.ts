@@ -368,12 +368,15 @@ export async function POST(request: Request) {
     .single();
 
   if (analysis.signal === "sell_now") {
-    await supabase.from("notifications").insert({
-      user_id: user.id,
-      vehicle_id: vehicle.id,
+    const { createAdminClient } = await import("@/lib/supabase/server");
+    const { createAndDispatch } = await import("@/lib/notify/dispatch");
+    await createAndDispatch(createAdminClient(), {
+      userId: user.id,
+      vehicleId: vehicle.id,
       type: "sell_now",
       title: `${vehicle.manufacturer} ${vehicle.model} 매각 적기`,
       message: `현재 시세 ${analysis.current_price.toLocaleString("ko-KR")}원. ${analysis.rationale}`,
+      email: true, // 매각 적기는 중요 → 이메일도 발송
     });
   }
 

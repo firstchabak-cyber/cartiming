@@ -57,3 +57,5 @@ cartiming - 바로 가기.lnk
 # app/ 라우트의 아이콘(파비콘 등)도 허용
 !app/icon.png
 .claude/scheduled_tasks.lock
+/public/worker-*.js
+/public/worker-*.js.map
