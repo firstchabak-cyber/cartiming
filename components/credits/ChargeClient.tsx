@@ -138,6 +138,23 @@ export function ChargeClient({ packages, tossClientKey }: Props) {
         {busy ? "결제 진행 중..." : "결제하기"}
       </Button>
 
+      <div className="rounded-lg border border-border bg-surface px-3 py-2 text-[11px] leading-relaxed text-muted">
+        <p className="font-semibold text-foreground">결제 전 안내</p>
+        <ul className="mt-1 list-disc space-y-0.5 pl-4">
+          <li>
+            캐시는 카타이밍 서비스 내 이용권으로,{" "}
+            <span className="font-medium text-foreground">
+              현금 인출·이체·환불·타인 양도가 불가
+            </span>
+            합니다.
+          </li>
+          <li>
+            단, 결제 후 <span className="font-medium text-foreground">미사용 캐시</span>는
+            7일 이내 요청 시 관련 법령에 따라 환불됩니다. (사용분·보너스 제외)
+          </li>
+        </ul>
+      </div>
+
       <p className="text-[11px] text-muted">
         결제 진행 시 카타이밍의{" "}
         <a href="/terms" className="text-primary underline" target="_blank">
