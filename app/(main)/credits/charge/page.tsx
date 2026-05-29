@@ -40,8 +40,8 @@ export default function ChargePage() {
           </li>
         </ul>
         <p className="text-[11px] text-success">
-          매월 {FREE_ANALYSIS_PER_MONTH}회 무료 분석 · 차량 1대 무료 등록 · 신규
-          가입 시 {SIGNUP_BONUS.toLocaleString("ko-KR")} 캐시 보너스
+          가입 시 무료 분석 {FREE_ANALYSIS_PER_MONTH}회 · 차량 1대 무료 등록 ·
+          신규 가입 보너스 {SIGNUP_BONUS.toLocaleString("ko-KR")} 캐시
         </p>
       </Card>
 

@@ -19,7 +19,8 @@ type Status = "loading" | "unsupported" | "subscribed" | "unsubscribed" | "denie
 export function PushSubscribeButton() {
   const [status, setStatus] = useState<Status>("loading");
   const [busy, setBusy] = useState(false);
-  const [reward, setReward] = useState(0);
+  const [charged, setCharged] = useState(0);
+  const [needCredit, setNeedCredit] = useState(false);
 
   useEffect(() => {
     if (
@@ -65,12 +66,20 @@ export function PushSubscribeButton() {
           keys: json.keys,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setStatus("subscribed");
-        const data = await res.json().catch(() => ({}));
-        if (data?.rewarded > 0) {
-          setReward(data.rewarded);
+        setNeedCredit(false);
+        if (data?.charged > 0) setCharged(data.charged);
+      } else if (res.status === 402) {
+        // 잔액 부족 → 구독 취소하고 충전 안내
+        try {
+          await sub.unsubscribe();
+        } catch {
+          // 무시
         }
+        setNeedCredit(true);
+        setStatus("unsubscribed");
       }
     } catch {
       // 무시
@@ -126,12 +135,20 @@ export function PushSubscribeButton() {
         }
       >
         {on ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
-        {busy ? "처리 중..." : on ? "휴대폰 알림 끄기" : "휴대폰 푸시 알림 켜기 🎁 +500캐시"}
+        {busy ? "처리 중..." : on ? "휴대폰 알림 끄기" : "휴대폰 푸시 알림 켜기 (500캐시)"}
       </button>
-      {reward > 0 && (
-        <p className="rounded-lg bg-success/10 px-3 py-2 text-xs font-semibold text-success">
-          🎉 알림 활성화 보상 {reward.toLocaleString("ko-KR")} 캐시가
-          지급되었어요!
+      {charged > 0 && (
+        <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted">
+          알림 활성화로 {charged.toLocaleString("ko-KR")} 캐시가 차감되었어요.
+          이후엔 추가 차감 없이 알림을 받습니다.
+        </p>
+      )}
+      {needCredit && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          캐시가 부족해요. 알림을 켜려면 500캐시가 필요합니다.{" "}
+          <a href="/credits/charge" className="font-semibold underline">
+            충전하기 →
+          </a>
         </p>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { NOTIFICATION_OPT_IN_REWARD } from "@/lib/credits/constants";
+import { NOTIFICATION_ENABLE_COST } from "@/lib/credits/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +34,31 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // notif_reward_granted = "알림 활성화 비용을 이미 1회 차감했는지" 플래그로 재활용.
+  // 최초 1회만 500캐시 차감. 끄고 다시 켜도 추가 차감 없음. 평생회원은 무료.
+  const { data: credit } = await admin
+    .from("user_credits")
+    .select("balance, lifetime_member, notif_reward_granted")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const alreadyCharged = credit?.notif_reward_granted === true;
+  const isLifetime = credit?.lifetime_member === true;
+  const needCharge = !alreadyCharged && !isLifetime;
+
+  // 잔액 부족 → 구독 저장 전에 막고 충전 유도
+  if (needCharge && (credit?.balance ?? 0) < NOTIFICATION_ENABLE_COST) {
+    return NextResponse.json(
+      {
+        error: `휴대폰 알림을 켜려면 ${NOTIFICATION_ENABLE_COST} 캐시가 필요합니다. 캐시를 충전해 주세요.`,
+        code: "insufficient_credits",
+        required: NOTIFICATION_ENABLE_COST,
+      },
+      { status: 402 },
+    );
+  }
+
   // endpoint unique → 같은 기기 재구독은 user_id 갱신
   const { error } = await admin.from("push_subscriptions").upsert(
     {
@@ -52,16 +77,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // 첫 알림 활성화 보상 500캐시 (1인 1회) — notif_reward_granted 플래그로 중복 차단
-  let rewarded = 0;
-  const { data: credit } = await admin
-    .from("user_credits")
-    .select("balance, notif_reward_granted")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (credit && credit.notif_reward_granted !== true) {
-    const newBalance = (credit.balance ?? 0) + NOTIFICATION_OPT_IN_REWARD;
+  // 최초 1회 차감
+  let charged = 0;
+  if (needCharge) {
+    const newBalance = (credit?.balance ?? 0) - NOTIFICATION_ENABLE_COST;
     const { error: updErr } = await admin
       .from("user_credits")
       .update({
@@ -69,28 +88,27 @@ export async function POST(request: Request) {
         notif_reward_granted: true,
         updated_at: new Date().toISOString(),
       })
-      // 동시성 방어: 아직 미지급 상태일 때만 갱신
+      // 동시성 방어: 아직 미차감 상태일 때만
       .eq("user_id", user.id)
       .eq("notif_reward_granted", false);
 
     if (!updErr) {
-      rewarded = NOTIFICATION_OPT_IN_REWARD;
+      charged = NOTIFICATION_ENABLE_COST;
       await admin.from("credit_transactions").insert({
         user_id: user.id,
-        type: "admin_grant",
-        amount: NOTIFICATION_OPT_IN_REWARD,
+        type: "monitoring",
+        amount: -NOTIFICATION_ENABLE_COST,
         balance_after: newBalance,
-        description: "휴대폰 알림 활성화 보상",
-      });
-      await admin.from("notifications").insert({
-        user_id: user.id,
-        type: "system",
-        title: `🎁 알림 활성화 보상 ${NOTIFICATION_OPT_IN_REWARD} 캐시 지급!`,
-        message:
-          "휴대폰 푸시 알림을 켜주셔서 감사합니다. 보상 캐시를 드렸어요. 매각 적기를 놓치지 마세요!",
+        description: "휴대폰 알림 활성화",
       });
     }
+  } else if (isLifetime && !alreadyCharged) {
+    // 평생회원: 차감 없이 플래그만 기록
+    await admin
+      .from("user_credits")
+      .update({ notif_reward_granted: true })
+      .eq("user_id", user.id);
   }
 
-  return NextResponse.json({ ok: true, rewarded });
+  return NextResponse.json({ ok: true, charged });
 }

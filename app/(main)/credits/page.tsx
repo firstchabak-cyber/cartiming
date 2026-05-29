@@ -83,12 +83,16 @@ export default async function CreditsPage() {
       <ReferralCard link={`${APP_URL}/r/${user.id}`} />
 
       <Card className="flex flex-col gap-2">
-        <CardTitle className="text-sm">이번 달 무료 시세 분석</CardTitle>
+        <CardTitle className="text-sm">무료 시세 분석 (가입 혜택)</CardTitle>
         <p className="text-xl font-bold text-foreground">
-          {freeRemaining} <span className="text-sm text-muted">/ {FREE_ANALYSIS_PER_MONTH}회 남음</span>
+          {freeRemaining}{" "}
+          <span className="text-sm text-muted">
+            / {FREE_ANALYSIS_PER_MONTH}회 남음
+          </span>
         </p>
         <p className="text-xs text-muted">
-          초과 사용 시 1회당 {CREDIT_COSTS.analysisOverage} 캐시 차감
+          가입 시 {FREE_ANALYSIS_PER_MONTH}회 무료 제공. 소진 후에는 1회당{" "}
+          {CREDIT_COSTS.analysisOverage} 캐시가 차감됩니다.
         </p>
       </Card>
 

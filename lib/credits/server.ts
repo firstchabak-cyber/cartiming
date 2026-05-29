@@ -61,20 +61,17 @@ export async function spendCredits(args: {
 }
 
 /**
- * 이번 달 (UTC 기준) 새 분석 횟수. 캐시 히트는 제외 (price_analyses 에 row 가 안 생기므로 자연스럽게 카운트 안 됨).
+ * 가입 후 누적(평생) 새 분석 횟수. 캐시 히트는 제외 (price_analyses 에 row 가 안 생기므로 자연스럽게 카운트 안 됨).
+ * 무료 분석은 가입 시 평생 1회만 제공되므로 월 구분 없이 전체를 센다.
  */
 export async function getMonthlyAnalysisCount(
   userId: string,
 ): Promise<number> {
   const supabase = createClient();
-  const start = new Date();
-  start.setUTCDate(1);
-  start.setUTCHours(0, 0, 0, 0);
   const { count } = await supabase
     .from("price_analyses")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("generated_at", start.toISOString());
+    .eq("user_id", userId);
   return count ?? 0;
 }
 
