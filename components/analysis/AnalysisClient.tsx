@@ -306,16 +306,18 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                   </p>
                 )}
             </div>
-            {result.cached && (
-              <button
-                type="button"
-                onClick={() => runAnalysis(true)}
-                disabled={loading}
-                className="self-start text-xs font-medium text-primary hover:underline disabled:opacity-50"
-              >
-                {loading ? "재분석 중..." : "🔄 최신 분석 요청 (Gemini 재호출)"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => runAnalysis(true)}
+              disabled={loading}
+              className="self-start text-xs font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {loading
+                ? "재분석 중..."
+                : result.cached
+                  ? "🔄 최신 분석 요청 (Gemini 재호출)"
+                  : "🔄 다시 분석 (Gemini 재호출)"}
+            </button>
             {result.loan && (
               <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-3 text-sm">
                 <div className="flex justify-between">
