@@ -1,3 +1,37 @@
+// 옵션이 시세를 크게 가르는 고가·슈퍼카 브랜드 — 매각 신청 시 옵션 등록 의무
+export const SUPERCAR_BRANDS = [
+  "포르쉐",
+  "페라리",
+  "벤틀리",
+  "람보르기니",
+  "마세라티",
+  "롤스로이스",
+  "맥라렌",
+  "애스턴마틴",
+  "부가티",
+  "포르셰",
+  "porsche",
+  "ferrari",
+  "bentley",
+  "lamborghini",
+  "maserati",
+  "rolls-royce",
+  "rollsroyce",
+  "mclaren",
+  "astonmartin",
+  "aston martin",
+  "bugatti",
+] as const;
+
+/** 제조사 문자열이 옵션 의무 브랜드인지 (공백·대소문자 무시) */
+export function isSupercarBrand(manufacturer: string | null | undefined): boolean {
+  if (!manufacturer) return false;
+  const norm = manufacturer.replace(/\s+/g, "").toLowerCase();
+  return SUPERCAR_BRANDS.some(
+    (b) => norm === b.replace(/\s+/g, "").toLowerCase(),
+  );
+}
+
 export const BODY_TYPES = [
   "sedan",
   "suv",

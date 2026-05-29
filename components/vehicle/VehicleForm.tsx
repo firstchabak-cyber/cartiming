@@ -28,6 +28,7 @@ const schema = z.object({
   model: z.string().min(1, "모델명을 입력해주세요"),
   year: z.string().regex(/^\d{4}$/, "4자리 연식"),
   mileage: z.string().regex(/^\d+$/, "주행거리는 숫자만"),
+  purchase_price: z.string().regex(/^\d*$/, "숫자만").optional(),
   trim: z.string().optional(),
   registered_at: z
     .string()
@@ -70,6 +71,7 @@ export type VehicleFormDefaults = {
   trim?: string | null;
   year?: number | null;
   mileage?: number | null;
+  purchase_price?: number | null;
   registered_at?: string | null;
   fuel_type?: string | null;
   transmission?: string | null;
@@ -145,6 +147,8 @@ export function VehicleForm(props: Props) {
       trim: v?.trim ?? "",
       year: v?.year != null ? String(v.year) : "",
       mileage: v?.mileage != null ? String(v.mileage) : "",
+      purchase_price:
+        v?.purchase_price != null ? String(v.purchase_price) : "",
       registered_at: v?.registered_at?.slice(0, 10) ?? "",
       fuel_type: (v?.fuel_type as FormValues["fuel_type"]) ?? "",
       transmission: (v?.transmission as FormValues["transmission"]) ?? "",
@@ -314,6 +318,11 @@ export function VehicleForm(props: Props) {
       model: values.model.trim(),
       year: Number(values.year),
       mileage: Number(values.mileage),
+      purchase_price: values.purchase_price
+        ? Number(values.purchase_price)
+        : isEdit
+          ? null
+          : undefined,
       trim: values.trim?.trim() || (isEdit ? null : undefined),
       registered_at:
         values.registered_at?.trim() ||
@@ -501,6 +510,17 @@ export function VehicleForm(props: Props) {
             placeholder="40,000"
             error={errors.mileage?.message}
           />
+          <NumberInput
+            name="purchase_price"
+            control={control}
+            label="구입가 (원, 선택)"
+            placeholder="예: 35,000,000"
+            error={errors.purchase_price?.message}
+          />
+          <p className="-mt-1 text-[11px] text-muted">
+            💡 처음 구입하신 금액(취득가)을 입력하면 시세 분석이 더 정확해져요.
+            모르면 비워두셔도 됩니다.
+          </p>
         </section>
 
         {/* 등록증 정보 */}
@@ -739,7 +759,7 @@ function CollapsibleHeader({
 }
 
 type NumberInputProps = {
-  name: "mileage" | "displacement_cc" | "loan_principal";
+  name: "mileage" | "displacement_cc" | "loan_principal" | "purchase_price";
   control: Control<FormValues>;
   label: string;
   placeholder?: string;
