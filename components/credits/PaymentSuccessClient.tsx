@@ -79,7 +79,7 @@ export function PaymentSuccessClient() {
           {state.message}
         </CardDescription>
         <p className="text-xs text-muted">
-          금액이 결제되었지만 적립이 안 된 경우 firstchabak@naver.com 으로
+          금액이 결제되었지만 적립이 안 된 경우 help@cartiming.app 으로
           문의해 주세요. 주문 번호와 함께 알려주시면 빠르게 처리됩니다.
         </p>
         <div className="mt-2 flex gap-2">

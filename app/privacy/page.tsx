@@ -128,7 +128,7 @@ export default function PrivacyPage() {
         <Section title="7. 개인정보 보호책임자">
           <ul className="list-none space-y-1">
             <li>이름: 카타이밍 운영자</li>
-            <li>이메일: firstchabak@naver.com</li>
+            <li>이메일: help@cartiming.app</li>
           </ul>
         </Section>
 

@@ -28,7 +28,7 @@ export const BUSINESS_INFO = {
   phone: "010-4487-4972",
 
   /** 고객 응대 이메일 */
-  email: "firstchabak@naver.com",
+  email: "help@cartiming.app",
 
   /** 호스팅 제공자 */
   hostingProvider: "Vercel Inc.",
