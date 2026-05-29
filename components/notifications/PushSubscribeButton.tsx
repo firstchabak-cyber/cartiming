@@ -41,23 +41,38 @@ export function PushSubscribeButton() {
       setStatus("denied");
       return;
     }
+
+    let settled = false;
+    const finish = (s: Status, sub: boolean) => {
+      if (settled) return;
+      settled = true;
+      setStatus(s);
+      setChecked(sub);
+    };
+
+    // 서비스워커 준비가 지연/실패해도 5초 후엔 버튼을 보여준다 (무한 로딩 방지)
+    const timeout = setTimeout(() => finish("unsubscribed", false), 5000);
+
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
       .then((sub) => {
-        setStatus(sub ? "subscribed" : "unsubscribed");
-        setChecked(!!sub);
+        clearTimeout(timeout);
+        finish(sub ? "subscribed" : "unsubscribed", !!sub);
       })
       .catch(() => {
-        setStatus("unsubscribed");
-        setChecked(false);
+        clearTimeout(timeout);
+        finish("unsubscribed", false);
       });
-    // 이미 알림 비용 낸 적 있는지 확인 (재활성화는 무료)
+
+    // 이미 알림 비용 낸 적 있는지 확인 (재활성화는 무료) — 실패해도 무시
     fetch("/api/push/status")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d?.alreadyPaid) setAlreadyPaid(true);
       })
       .catch(() => {});
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const subscribe = async () => {
