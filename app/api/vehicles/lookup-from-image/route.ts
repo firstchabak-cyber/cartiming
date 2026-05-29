@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGeminiModel } from "@/lib/gemini/client";
+import { analyzeVision } from "@/lib/gemini/client";
 import type { LookupResult } from "@/lib/vehicle-lookup";
 
 export const dynamic = "force-dynamic";
@@ -178,9 +178,8 @@ export async function POST(request: Request) {
 
   let rawText: string;
   try {
-    const model = getGeminiModel();
-    const result = await model.generateContent([
-      EXTRACTION_PROMPT,
+    rawText = await analyzeVision([
+      { text: EXTRACTION_PROMPT },
       {
         inlineData: {
           data: base64,
@@ -188,7 +187,6 @@ export async function POST(request: Request) {
         },
       },
     ]);
-    rawText = result.response.text();
   } catch (e) {
     const msg =
       e instanceof Error ? e.message : "AI 분석에 실패했습니다";

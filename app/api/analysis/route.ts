@@ -177,12 +177,21 @@ export async function POST(request: Request) {
   try {
     raw = await analyzePrice(prompt);
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    const isOverload =
+      msg.includes("503") ||
+      msg.toLowerCase().includes("overload") ||
+      msg.toLowerCase().includes("high demand") ||
+      msg.toLowerCase().includes("unavailable");
     return NextResponse.json(
       {
-        error: "AI 분석 호출에 실패했습니다",
-        detail: err instanceof Error ? err.message : "unknown",
+        error: isOverload
+          ? "AI 서비스가 일시적으로 혼잡합니다. 1~2분 후 다시 시도해 주세요."
+          : "AI 분석 호출에 실패했습니다",
+        detail: msg,
+        retryable: isOverload,
       },
-      { status: 502 },
+      { status: isOverload ? 503 : 502 },
     );
   }
 
