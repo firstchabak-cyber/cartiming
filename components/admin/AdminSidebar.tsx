@@ -11,12 +11,14 @@ import {
   Wallet,
   ArrowLeft,
   Activity,
+  Search,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/admin/analyses", label: "분석 모니터링", icon: Activity },
   { href: "/admin/sales", label: "매각 신청", icon: ShoppingBag },
+  { href: "/admin/wanted", label: "구매요청 승인", icon: Search },
   { href: "/admin/fees", label: "정산·매출", icon: Wallet },
   { href: "/admin/dealers", label: "딜러 관리", icon: Store },
   { href: "/admin/users", label: "고객 관리", icon: Users },
