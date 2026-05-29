@@ -19,6 +19,7 @@ type Status = "loading" | "unsupported" | "subscribed" | "unsubscribed" | "denie
 export function PushSubscribeButton() {
   const [status, setStatus] = useState<Status>("loading");
   const [busy, setBusy] = useState(false);
+  const [reward, setReward] = useState(0);
 
   useEffect(() => {
     if (
@@ -64,7 +65,13 @@ export function PushSubscribeButton() {
           keys: json.keys,
         }),
       });
-      if (res.ok) setStatus("subscribed");
+      if (res.ok) {
+        setStatus("subscribed");
+        const data = await res.json().catch(() => ({}));
+        if (data?.rewarded > 0) {
+          setReward(data.rewarded);
+        }
+      }
     } catch {
       // 무시
     } finally {
@@ -107,18 +114,26 @@ export function PushSubscribeButton() {
 
   const on = status === "subscribed";
   return (
-    <button
-      type="button"
-      onClick={on ? unsubscribe : subscribe}
-      disabled={busy}
-      className={
-        on
-          ? "flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-surface disabled:opacity-50"
-          : "flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-      }
-    >
-      {on ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
-      {busy ? "처리 중..." : on ? "휴대폰 알림 끄기" : "휴대폰 푸시 알림 켜기"}
-    </button>
+    <div className="flex flex-col gap-1.5">
+      <button
+        type="button"
+        onClick={on ? unsubscribe : subscribe}
+        disabled={busy}
+        className={
+          on
+            ? "flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-surface disabled:opacity-50"
+            : "flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        }
+      >
+        {on ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+        {busy ? "처리 중..." : on ? "휴대폰 알림 끄기" : "휴대폰 푸시 알림 켜기 🎁 +500캐시"}
+      </button>
+      {reward > 0 && (
+        <p className="rounded-lg bg-success/10 px-3 py-2 text-xs font-semibold text-success">
+          🎉 알림 활성화 보상 {reward.toLocaleString("ko-KR")} 캐시가
+          지급되었어요!
+        </p>
+      )}
+    </div>
   );
 }
