@@ -334,7 +334,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const analysis = analysisParsed.data;
+  const rawAnalysis = analysisParsed.data;
+  // 안전망: AI 가 절대 하한을 어겨도 서버에서 보정 (그래프가 비정상으로 떨어지는 것 방지)
+  const cp = rawAnalysis.current_price;
+  const analysis = {
+    ...rawAnalysis,
+    predicted_1m: Math.max(rawAnalysis.predicted_1m, Math.round(cp * 0.95)),
+    predicted_3m: Math.max(rawAnalysis.predicted_3m, Math.round(cp * 0.90)),
+    predicted_6m: Math.max(rawAnalysis.predicted_6m, Math.round(cp * 0.85)),
+    predicted_1y: Math.max(rawAnalysis.predicted_1y, Math.round(cp * 0.78)),
+    predicted_2y: Math.max(rawAnalysis.predicted_2y, Math.round(cp * 0.65)),
+    predicted_3y: Math.max(rawAnalysis.predicted_3y, Math.round(cp * 0.55)),
+  };
   const { data: saved } = await supabase
     .from("price_analyses")
     .insert({
