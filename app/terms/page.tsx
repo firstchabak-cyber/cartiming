@@ -65,7 +65,7 @@ export default function TermsPage() {
             <li>회사는 회원에게 다음의 서비스를 제공합니다:
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 <li>차량 등록 및 관리 (무료 1대, 추가 시 캐시 차감)</li>
-                <li>AI 시세 분석 (월 5회 무료, 초과 시 캐시 차감)</li>
+                <li>AI 시세 분석 (월 2회 무료, 초과 시 캐시 차감)</li>
                 <li>매각 적기 자동 알림 (주 1회, 무료)</li>
                 <li>차량 매각 신청 매칭 (회원 무료, 매수 딜러에게 수수료 부과)</li>
                 <li>기타 회사가 정하는 부가 서비스</li>
