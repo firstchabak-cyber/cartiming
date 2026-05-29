@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/client";
 
 const TIMING_OPTIONS = [
   { value: "immediate", label: "즉시 매각" },
@@ -13,12 +15,18 @@ const TIMING_OPTIONS = [
   { value: "undecided", label: "미정 (시세 보고 결정)" },
 ];
 
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+const MAX_BYTES = 10 * 1024 * 1024;
+
 export function SaleRequestForm({
   vehicleId,
   currentMileage,
+  requireOptionSheet = false,
 }: {
   vehicleId: string;
   currentMileage: number;
+  /** 슈퍼카 브랜드 — 옵션표 사진 1장 이상 필수 */
+  requireOptionSheet?: boolean;
 }) {
   const router = useRouter();
   const [mileageStr, setMileageStr] = useState(String(currentMileage));
@@ -30,6 +38,44 @@ export function SaleRequestForm({
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 옵션표 사진 (슈퍼카 필수) — 신청 생성 후 업로드할 파일들을 미리 보관
+  const [optionFiles, setOptionFiles] = useState<File[]>([]);
+
+  const addOptionFiles = (files: FileList) => {
+    const list = Array.from(files);
+    const invalid = list.find(
+      (f) => !ALLOWED_MIME.includes(f.type) || f.size > MAX_BYTES,
+    );
+    if (invalid) {
+      setError("옵션표 사진은 JPG/PNG/WebP/HEIC, 1장당 10MB 이하");
+      return;
+    }
+    setError(null);
+    setOptionFiles((prev) => [...prev, ...list].slice(0, 5));
+  };
+
+  const uploadOptionSheets = async (saleRequestId: string, userId: string) => {
+    const supabase = createClient();
+    for (let i = 0; i < optionFiles.length; i++) {
+      const file = optionFiles[i];
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const photoId = crypto.randomUUID();
+      const path = `${userId}/${saleRequestId}/optionsheet-${photoId}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("sale-photos")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw new Error(`옵션표 사진 업로드 실패: ${upErr.message}`);
+      const res = await fetch(`/api/sales/${saleRequestId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storage_path: path, sort_order: i }),
+      });
+      if (!res.ok) {
+        await supabase.storage.from("sale-photos").remove([path]);
+        throw new Error("옵션표 사진 저장 실패");
+      }
+    }
+  };
 
   const submit = async () => {
     setBusy(true);
@@ -51,6 +97,27 @@ export function SaleRequestForm({
         setBusy(false);
         return;
       }
+      if (requireOptionSheet && optionFiles.length === 0) {
+        setError(
+          "옵션표 사진을 1장 이상 등록해주세요 (구매계약서 또는 제조사 옵션 명세서)",
+        );
+        setBusy(false);
+        return;
+      }
+
+      // 옵션표 사진 업로드를 위해 로그인 사용자 id 확보
+      let userId: string | null = null;
+      if (requireOptionSheet) {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        userId = data.user?.id ?? null;
+        if (!userId) {
+          setError("로그인 세션을 확인하지 못했습니다");
+          setBusy(false);
+          return;
+        }
+      }
+
       const res = await fetch("/api/sales", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,6 +137,19 @@ export function SaleRequestForm({
         setError(data?.error ?? `신청 실패 (HTTP ${res.status})`);
         return;
       }
+
+      // 슈퍼카: 옵션표 사진 업로드 (실패 시 신청은 됐으나 사진만 재시도 안내)
+      if (requireOptionSheet && userId) {
+        try {
+          await uploadOptionSheets(data.id, userId);
+        } catch (e) {
+          setError(
+            (e instanceof Error ? e.message : "옵션표 사진 업로드 실패") +
+              " — 매각 신청은 생성됐으니 상세 페이지에서 사진을 추가해주세요.",
+          );
+        }
+      }
+
       router.push(`/sales/${data.id}`);
       router.refresh();
     } catch {
@@ -109,6 +189,74 @@ export function SaleRequestForm({
           변경이 필요하면 먼저 차량 상세 → 외판 상태 수정 후 다시 신청해주세요.
         </p>
       </Card>
+
+      {requireOptionSheet && (
+        <Card className="flex flex-col gap-3 border-primary/40 bg-primary/5">
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              📋 옵션표 사진 (필수)
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              포르쉐·페라리 등 고가 브랜드는 옵션이 시세를 수백만~수천만원
+              좌우합니다. <strong>구매계약서</strong>나{" "}
+              <strong>제조사 옵션 명세서(빌드시트)</strong> 사진을 1장 이상
+              올려주세요. 딜러가 정확한 입찰가를 산정합니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {optionFiles.map((f, i) => (
+              <div
+                key={i}
+                className="relative h-24 w-24 overflow-hidden rounded-lg border border-border bg-surface"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={URL.createObjectURL(f)}
+                  alt={`옵션표 ${i + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOptionFiles((prev) => prev.filter((_, idx) => idx !== i))
+                  }
+                  disabled={busy}
+                  aria-label="사진 삭제"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {optionFiles.length < 5 && (
+              <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-primary/50 bg-background text-xs text-primary hover:bg-primary/5">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  multiple
+                  className="hidden"
+                  disabled={busy}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      addOptionFiles(e.target.files);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+                {busy ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <ImagePlus className="h-5 w-5" />
+                    <span>추가</span>
+                  </>
+                )}
+              </label>
+            )}
+          </div>
+          <p className="text-[11px] text-muted">{optionFiles.length}/5장</p>
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-foreground">매각 정보</p>

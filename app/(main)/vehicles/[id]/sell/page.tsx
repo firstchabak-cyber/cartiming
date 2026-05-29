@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SaleRequestForm } from "@/components/sale/SaleRequestForm";
+import { isSupercarBrand } from "@/lib/constants/vehicle";
 
 export default async function SellVehiclePage({
   params,
@@ -19,11 +20,15 @@ export default async function SellVehiclePage({
     .select(
       "id, manufacturer, model, trim, year, mileage, plate_number, status, fuel_type, transmission, body_type, vehicle_class",
     )
+    // 슈퍼카 옵션표 사진 필수 판정용
     .eq("id", params.id)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!vehicle) notFound();
+
+  // 슈퍼카 브랜드는 옵션표 사진 1장 이상 필수
+  const requireOptionSheet = isSupercarBrand(vehicle.manufacturer);
 
   // 딜러가 입찰가 산정에 꼭 필요한 핵심 정보 누락 확인
   const missing: string[] = [];
@@ -104,6 +109,7 @@ export default async function SellVehiclePage({
       <SaleRequestForm
         vehicleId={vehicle.id}
         currentMileage={vehicle.mileage}
+        requireOptionSheet={requireOptionSheet}
       />
     </div>
   );

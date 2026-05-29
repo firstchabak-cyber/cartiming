@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { isSupercarBrand } from "@/lib/constants/vehicle";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
   // 차량이 본인 소유 + 활성 상태인지 확인
   const { data: vehicle } = await supabase
     .from("vehicles")
-    .select("id, status, manufacturer, options")
+    .select("id, status")
     .eq("id", parsed.data.vehicleId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -62,20 +61,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // 포르쉐·페라리 등 고가 브랜드는 옵션이 시세를 크게 좌우 → 옵션 등록 필수
-  if (isSupercarBrand(vehicle.manufacturer)) {
-    const opts = (vehicle.options ?? []) as string[];
-    if (opts.length === 0) {
-      return NextResponse.json(
-        {
-          error:
-            "포르쉐·페라리 등 고가 브랜드는 옵션이 시세를 크게 좌우합니다. 매각 신청 전 차량 정보 수정에서 옵션을 등록해 주세요.",
-          code: "options_required",
-        },
-        { status: 400 },
-      );
-    }
-  }
+  // 슈퍼카 브랜드의 옵션표는 신청 생성 직후 사진 업로드로 충족됨(클라이언트에서 강제).
+  // 사진은 sale_request 가 있어야 올릴 수 있으므로 여기서는 차단하지 않는다.
 
   // 이미 진행 중인 매각 신청이 있는지 체크
   const { data: existing } = await supabase
