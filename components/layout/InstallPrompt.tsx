@@ -106,14 +106,21 @@ export function InstallPrompt() {
       </div>
 
       {!showIosGuide ? (
-        <button
-          type="button"
-          onClick={install}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-        >
-          <Download className="h-4 w-4" />
-          {isIos ? "추가 방법 보기" : "홈 화면에 추가"}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={install}
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <Download className="h-4 w-4" />
+            {isIos ? "추가 방법 보기" : "홈 화면에 추가"}
+          </button>
+          <p className="text-[11px] text-muted">
+            ※ &quot;출처를 알 수 없는 앱&quot; 같은 안내가 떠도 정상이에요.
+            앱스토어를 거치지 않고 홈 화면에 바로 추가되는 방식이라 그렇습니다.
+            안심하고 &quot;추가&quot;를 눌러주세요.
+          </p>
+        </>
       ) : (
         <div className="flex flex-col gap-1.5 rounded-lg bg-background p-3 text-xs text-foreground">
           <p className="font-semibold">아이폰 추가 방법 (3초)</p>
