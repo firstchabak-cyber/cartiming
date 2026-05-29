@@ -11,6 +11,8 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin/check";
+import { APP_URL } from "@/lib/constants/app";
+import { ReferralCard } from "@/components/profile/ReferralCard";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -129,6 +131,10 @@ export default function ProfilePage() {
           </div>
         )}
       </Card>
+
+      {profile?.id && (
+        <ReferralCard link={`${APP_URL}/r/${profile.id}`} />
+      )}
 
       <Card className="flex items-center justify-between">
         <div>

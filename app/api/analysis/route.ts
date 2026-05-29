@@ -29,6 +29,7 @@ import {
   logAnalysis,
   maybeAlertAdminOnErrorBurst,
 } from "@/lib/observability/analysis-log";
+import { tryRewardReferral } from "@/lib/referral/reward";
 
 const requestSchema = z.object({
   vehicleId: z.string().uuid(),
@@ -389,6 +390,9 @@ export async function POST(request: Request) {
       year: vehicle.year,
     },
   });
+
+  // 친구 추천 보상 — 추천 링크로 온 친구가 분석을 완료하면 추천인에게 캐시 (1회)
+  await tryRewardReferral(user.id);
 
   return NextResponse.json({
     vehicle_id: vehicle.id,
