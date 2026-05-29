@@ -49,9 +49,11 @@ export function PushSubscribeButton() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
+      const key = urlBase64ToUint8Array(VAPID_PUBLIC!);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC!),
+        // 일부 TS lib 버전에서 Uint8Array 직접 전달 시 타입 불일치 → BufferSource 로 캐스팅
+        applicationServerKey: key.buffer as ArrayBuffer,
       });
       const json = sub.toJSON();
       const res = await fetch("/api/push/subscribe", {
