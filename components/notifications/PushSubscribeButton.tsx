@@ -148,8 +148,21 @@ export function PushSubscribeButton() {
     }
   };
 
-  if (status === "loading") return null;
-  if (status === "unsupported") return null;
+  if (status === "loading") {
+    return (
+      <div className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted">
+        알림 설정을 불러오는 중...
+      </div>
+    );
+  }
+  if (status === "unsupported") {
+    return (
+      <p className="rounded-xl border border-border bg-surface px-3 py-2.5 text-xs text-muted">
+        이 브라우저에서는 휴대폰 푸시 알림을 지원하지 않아요. 휴대폰 크롬(안드로이드)이나
+        홈 화면에 추가한 앱(아이폰)에서 켤 수 있어요. (이메일 알림은 아래에서 받을 수 있어요)
+      </p>
+    );
+  }
 
   if (status === "denied") {
     return (

@@ -42,8 +42,8 @@ export function NotificationSettings() {
       <div className="flex flex-col gap-1">
         <PushSubscribeButton />
         <p className="text-[11px] text-muted">
-          매각 적기·시세 변동을 휴대폰 푸시로 받아요. (홈 화면에 앱을 추가하면
-          더 안정적이에요)
+          📱 휴대폰 홈 화면에 앱을 추가하면 알림이 더 안정적으로 도착해요.
+          (아이폰은 홈 화면 추가 후에만 푸시가 작동합니다)
         </p>
       </div>
 
