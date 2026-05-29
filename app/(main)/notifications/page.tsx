@@ -3,6 +3,7 @@ import { BellOff, Bell, TrendingUp } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MarkAllReadButton } from "@/components/layout/MarkAllReadButton";
+import { NotificationSettings } from "@/components/notifications/NotificationSettings";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils/format";
 
@@ -42,6 +43,8 @@ export default async function NotificationsPage() {
         <h1 className="text-xl font-bold">알림</h1>
         <MarkAllReadButton disabled={unreadCount === 0} />
       </header>
+
+      <NotificationSettings />
 
       {items.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 py-10 text-center">

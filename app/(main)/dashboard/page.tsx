@@ -98,11 +98,13 @@ export default async function DashboardPage() {
             <CardDescription>현재가 + 1/3/6개월 예상</CardDescription>
           </Card>
         </Link>
-        <Card className="flex flex-col gap-2">
-          <Bell className="h-5 w-5 text-warning" />
-          <CardTitle className="text-sm">매각 알림</CardTitle>
-          <CardDescription>적정 시점이 오면 알려드려요</CardDescription>
-        </Card>
+        <Link href="/notifications">
+          <Card className="flex h-full flex-col gap-2 transition-colors hover:bg-surface">
+            <Bell className="h-5 w-5 text-warning" />
+            <CardTitle className="text-sm">매각 알림</CardTitle>
+            <CardDescription>적정 시점 알림 · 켜기 →</CardDescription>
+          </Card>
+        </Link>
       </section>
 
       {user && <ReferralCard link={`${APP_URL}/r/${user.id}`} />}

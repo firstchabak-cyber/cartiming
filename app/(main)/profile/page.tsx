@@ -13,6 +13,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin/check";
 import { APP_URL } from "@/lib/constants/app";
 import { ReferralCard } from "@/components/profile/ReferralCard";
+import { NotificationSettings } from "@/components/notifications/NotificationSettings";
+import { APP_URL } from "@/lib/constants/app";
+import { ReferralCard } from "@/components/profile/ReferralCard";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -135,6 +138,10 @@ export default function ProfilePage() {
       {profile?.id && (
         <ReferralCard link={`${APP_URL}/r/${profile.id}`} />
       )}
+
+      <NotificationSettings />
+
+      {profile?.id && <ReferralCard link={`${APP_URL}/r/${profile.id}`} />}
 
       <Card className="flex items-center justify-between">
         <div>
