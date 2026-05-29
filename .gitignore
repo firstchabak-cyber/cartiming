@@ -51,3 +51,8 @@ cartiming - 바로 가기.lnk
 
 # 단 public/ 안의 PNG 는 허용
 !public/*.png
+# public/icons/ 하위 PWA 아이콘 PNG 도 허용
+!public/icons/
+!public/icons/*.png
+# app/ 라우트의 아이콘(파비콘 등)도 허용
+!app/icon.png
