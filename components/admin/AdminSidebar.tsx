@@ -10,10 +10,12 @@ import {
   Database,
   Wallet,
   ArrowLeft,
+  Activity,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
+  { href: "/admin/analyses", label: "분석 모니터링", icon: Activity },
   { href: "/admin/sales", label: "매각 신청", icon: ShoppingBag },
   { href: "/admin/fees", label: "수수료 정산", icon: Wallet },
   { href: "/admin/dealers", label: "딜러 관리", icon: Store },

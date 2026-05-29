@@ -19,6 +19,10 @@ import {
   formatSimilarSalesForPrompt,
   getSimilarSales,
 } from "@/lib/analysis/similarSales";
+import {
+  logAnalysis,
+  maybeAlertAdminOnErrorBurst,
+} from "@/lib/observability/analysis-log";
 
 const requestSchema = z.object({
   vehicleId: z.string().uuid(),
@@ -109,6 +113,18 @@ export async function POST(request: Request) {
         model: vehicle.model,
         year: vehicle.year,
       });
+      void logAnalysis({
+        userId: user.id,
+        vehicleId: vehicle.id,
+        outcome: "cache_hit",
+        currentPrice: cached.current_price,
+        signal: cached.signal,
+        snapshot: {
+          manufacturer: vehicle.manufacturer,
+          model: vehicle.model,
+          year: vehicle.year,
+        },
+      });
       return NextResponse.json({
         vehicle_id: vehicle.id,
         current_price: cached.current_price,
@@ -149,6 +165,16 @@ export async function POST(request: Request) {
       credits?.lifetime_member ||
       (credits?.balance ?? 0) >= CREDIT_COSTS.analysisOverage;
     if (!hasEnough) {
+      void logAnalysis({
+        userId: user.id,
+        vehicleId: vehicle.id,
+        outcome: "insufficient_credits",
+        snapshot: {
+          manufacturer: vehicle.manufacturer,
+          model: vehicle.model,
+          year: vehicle.year,
+        },
+      });
       return NextResponse.json(
         {
           error: `이번 달 무료 분석 ${FREE_ANALYSIS_PER_MONTH}회를 모두 사용했습니다. 추가 분석은 ${CREDIT_COSTS.analysisOverage} 캐시가 필요해요.`,
@@ -174,6 +200,7 @@ export async function POST(request: Request) {
     similarSalesText,
   });
 
+  const startedAt = Date.now();
   let raw: string;
   try {
     raw = await analyzePrice(prompt);
@@ -184,6 +211,20 @@ export async function POST(request: Request) {
       msg.toLowerCase().includes("overload") ||
       msg.toLowerCase().includes("high demand") ||
       msg.toLowerCase().includes("unavailable");
+    // 로깅 + 운영자 알림 트리거
+    void logAnalysis({
+      userId: user.id,
+      vehicleId: vehicle.id,
+      outcome: isOverload ? "overload" : "error",
+      durationMs: Date.now() - startedAt,
+      errorMessage: msg,
+      snapshot: {
+        manufacturer: vehicle.manufacturer,
+        model: vehicle.model,
+        year: vehicle.year,
+      },
+    });
+    void maybeAlertAdminOnErrorBurst();
     // 호출 실패 — 캐시는 아직 차감 안 했으므로 환불 불필요
     return NextResponse.json(
       {
@@ -221,6 +262,18 @@ export async function POST(request: Request) {
   try {
     json = JSON.parse(extractJson(raw));
   } catch {
+    void logAnalysis({
+      userId: user.id,
+      vehicleId: vehicle.id,
+      outcome: "validation_error",
+      durationMs: Date.now() - startedAt,
+      errorMessage: "JSON 파싱 실패",
+      snapshot: {
+        manufacturer: vehicle.manufacturer,
+        model: vehicle.model,
+        year: vehicle.year,
+      },
+    });
     return NextResponse.json(
       { error: "AI 응답을 해석하지 못했습니다", raw },
       { status: 502 },
@@ -229,6 +282,18 @@ export async function POST(request: Request) {
 
   const analysisParsed = analysisSchema.safeParse(json);
   if (!analysisParsed.success) {
+    void logAnalysis({
+      userId: user.id,
+      vehicleId: vehicle.id,
+      outcome: "validation_error",
+      durationMs: Date.now() - startedAt,
+      errorMessage: "스키마 검증 실패",
+      snapshot: {
+        manufacturer: vehicle.manufacturer,
+        model: vehicle.model,
+        year: vehicle.year,
+      },
+    });
     return NextResponse.json(
       {
         error: "AI 응답 형식이 올바르지 않습니다",
@@ -267,6 +332,20 @@ export async function POST(request: Request) {
       message: `현재 시세 ${analysis.current_price.toLocaleString("ko-KR")}원. ${analysis.rationale}`,
     });
   }
+
+  void logAnalysis({
+    userId: user.id,
+    vehicleId: vehicle.id,
+    outcome: "success",
+    durationMs: Date.now() - startedAt,
+    currentPrice: analysis.current_price,
+    signal: analysis.signal,
+    snapshot: {
+      manufacturer: vehicle.manufacturer,
+      model: vehicle.model,
+      year: vehicle.year,
+    },
+  });
 
   return NextResponse.json({
     vehicle_id: vehicle.id,
