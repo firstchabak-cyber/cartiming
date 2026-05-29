@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { ExternalQuotesPanel } from "./ExternalQuotesPanel";
 
 type VehicleOption = {
   id: string;
@@ -48,11 +49,14 @@ type SimilarSale = {
   snapshot_year: number;
   snapshot_mileage: number;
   snapshot_damage_count: number;
+  snapshot_plate_category?: "private" | "rental" | "commercial" | null;
 };
 
 type AnalysisResult = {
   vehicle_id: string;
   current_price: number;
+  current_price_min?: number | null;
+  current_price_max?: number | null;
   predicted_1m: number;
   predicted_3m: number;
   predicted_6m: number;
@@ -65,6 +69,12 @@ type AnalysisResult = {
   cached?: boolean;
   loan: LoanInfo | null;
   similar_sales?: SimilarSale[];
+};
+
+const PLATE_LABEL: Record<string, string> = {
+  private: "자가용",
+  rental: "렌터카",
+  commercial: "영업용",
 };
 
 function formatRelativeTime(iso: string) {
@@ -245,6 +255,10 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
         {error && <p className="text-sm text-danger">{error}</p>}
       </Card>
 
+      {selectedId && (
+        <ExternalQuotesPanel vehicleId={selectedId} />
+      )}
+
       {result && (
         <>
           <Card className="flex flex-col gap-3">
@@ -260,20 +274,37 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                 />
               </div>
             </div>
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="text-2xl font-bold text-foreground">
-                {formatKRW(result.current_price)}
-              </p>
-              <span
-                className={cn(
-                  "text-xs",
-                  result.cached ? "text-muted" : "text-success",
+            <div className="flex flex-col gap-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-2xl font-bold text-foreground">
+                  {formatKRW(result.current_price)}
+                </p>
+                <span
+                  className={cn(
+                    "text-xs",
+                    result.cached ? "text-muted" : "text-success",
+                  )}
+                >
+                  {result.cached
+                    ? `캐시 · ${formatRelativeTime(result.generated_at)}`
+                    : "방금 분석됨"}
+                </span>
+              </div>
+              {result.current_price_min &&
+                result.current_price_max &&
+                result.current_price_min !== result.current_price_max && (
+                  <p className="text-xs text-muted">
+                    예상 범위{" "}
+                    <span className="font-medium text-foreground">
+                      {formatKRW(result.current_price_min)} ~{" "}
+                      {formatKRW(result.current_price_max)}
+                    </span>
+                    {"  "}
+                    <span className="text-[10px]">
+                      (보수적 ~ 적극 매입가)
+                    </span>
+                  </p>
                 )}
-              >
-                {result.cached
-                  ? `캐시 · ${formatRelativeTime(result.generated_at)}`
-                  : "방금 분석됨"}
-              </span>
             </div>
             {result.cached && (
               <button
@@ -496,6 +527,11 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                       </span>
                       <span className="text-[10px] text-muted">
                         {s.channel === "cartiming" ? "🏷 카타이밍" : "📍 외부"}
+                        {s.snapshot_plate_category && (
+                          <span className="ml-1 rounded bg-surface px-1 py-0.5">
+                            {PLATE_LABEL[s.snapshot_plate_category] ?? ""}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <span className="font-semibold text-foreground">

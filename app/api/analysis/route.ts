@@ -20,6 +20,12 @@ import {
   getSimilarSales,
 } from "@/lib/analysis/similarSales";
 import {
+  formatExternalQuotesForPrompt,
+  getCrowdQuoteStats,
+  getOwnVehicleQuotes,
+} from "@/lib/analysis/externalQuotes";
+import { classifyPlate } from "@/lib/analysis/prompt";
+import {
   logAnalysis,
   maybeAlertAdminOnErrorBurst,
 } from "@/lib/observability/analysis-log";
@@ -98,7 +104,7 @@ export async function POST(request: Request) {
     const { data: cached } = await supabase
       .from("price_analyses")
       .select(
-        "current_price, predicted_1m, predicted_3m, predicted_6m, predicted_1y, predicted_2y, predicted_3y, signal, rationale, generated_at",
+        "current_price, current_price_min, current_price_max, predicted_1m, predicted_3m, predicted_6m, predicted_1y, predicted_2y, predicted_3y, signal, rationale, generated_at",
       )
       .eq("vehicle_id", vehicle.id)
       .eq("user_id", user.id)
@@ -128,6 +134,8 @@ export async function POST(request: Request) {
       return NextResponse.json({
         vehicle_id: vehicle.id,
         current_price: cached.current_price,
+        current_price_min: cached.current_price_min,
+        current_price_max: cached.current_price_max,
         predicted_1m: cached.predicted_1m,
         predicted_3m: cached.predicted_3m,
         predicted_6m: cached.predicted_6m,
@@ -186,18 +194,40 @@ export async function POST(request: Request) {
     }
   }
 
-  const similarSales = await getSimilarSales({
-    manufacturer: vehicle.manufacturer,
-    model: vehicle.model,
-    year: vehicle.year,
+  const [similarSales, ownQuotes, crowdStats] = await Promise.all([
+    getSimilarSales({
+      manufacturer: vehicle.manufacturer,
+      model: vehicle.model,
+      year: vehicle.year,
+    }),
+    getOwnVehicleQuotes(vehicle.id, user.id),
+    getCrowdQuoteStats({
+      manufacturer: vehicle.manufacturer,
+      model: vehicle.model,
+      year: vehicle.year,
+    }),
+  ]);
+
+  const plateInfo = classifyPlate(
+    (vehicle as { plate_number?: string | null }).plate_number,
+  );
+  const ownPlateCategory =
+    plateInfo.category === "unknown" ? null : plateInfo.category;
+  const similarSalesText = formatSimilarSalesForPrompt(
+    similarSales,
+    ownPlateCategory,
+  );
+  const externalQuotesText = formatExternalQuotesForPrompt({
+    ownQuotes,
+    crowdStats,
   });
-  const similarSalesText = formatSimilarSalesForPrompt(similarSales);
 
   const prompt = buildAnalysisPrompt({
     vehicle: vehicle as VehicleForPrompt,
     maintenance: records,
     ctx,
     similarSalesText,
+    externalQuotesText,
   });
 
   const startedAt = Date.now();
@@ -311,6 +341,8 @@ export async function POST(request: Request) {
       vehicle_id: vehicle.id,
       user_id: user.id,
       current_price: analysis.current_price,
+      current_price_min: analysis.current_price_min ?? null,
+      current_price_max: analysis.current_price_max ?? null,
       predicted_1m: analysis.predicted_1m,
       predicted_3m: analysis.predicted_3m,
       predicted_6m: analysis.predicted_6m,
