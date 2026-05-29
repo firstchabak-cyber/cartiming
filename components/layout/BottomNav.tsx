@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Car, LineChart, User } from "lucide-react";
+import { Home, Car, Search, LineChart, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const ITEMS = [
   { href: "/dashboard", label: "홈", icon: Home },
   { href: "/garage", label: "내 차고", icon: Car },
+  { href: "/wanted", label: "찾는차", icon: Search },
   { href: "/analysis", label: "분석", icon: LineChart },
   { href: "/profile", label: "마이", icon: User },
 ];
