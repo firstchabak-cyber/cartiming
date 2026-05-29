@@ -105,7 +105,7 @@ export default async function WantedBoardPage() {
                       ✅ 내 차가 이 조건에 맞아요!
                     </p>
                     <Link
-                      href="/vehicles"
+                      href="/garage"
                       className="rounded-md bg-primary px-3 py-1.5 text-center text-xs font-semibold text-white"
                     >
                       내 차 매각 신청하기
