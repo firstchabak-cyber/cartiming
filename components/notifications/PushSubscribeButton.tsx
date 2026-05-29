@@ -15,17 +15,26 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return arr;
 }
 
+/** 프로미스가 ms 안에 안 끝나면 거부 (무한 대기 방지) */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} 시간 초과`)), ms),
+    ),
+  ]);
+}
+
 type Status = "loading" | "unsupported" | "subscribed" | "unsubscribed" | "denied";
 
 export function PushSubscribeButton() {
   const [status, setStatus] = useState<Status>("loading");
   const [busy, setBusy] = useState(false);
-  // 체크박스 상태 (저장 전 사용자가 켠/끈 의도)
   const [checked, setChecked] = useState(false);
   const [charged, setCharged] = useState(0);
   const [needCredit, setNeedCredit] = useState(false);
-  // 이미 한 번 알림 비용을 낸 적이 있는지 (재활성화 시 무료 안내용)
   const [alreadyPaid, setAlreadyPaid] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -49,8 +58,6 @@ export function PushSubscribeButton() {
       setStatus(s);
       setChecked(sub);
     };
-
-    // 서비스워커 준비가 지연/실패해도 5초 후엔 버튼을 보여준다 (무한 로딩 방지)
     const timeout = setTimeout(() => finish("unsubscribed", false), 5000);
 
     navigator.serviceWorker.ready
@@ -64,7 +71,6 @@ export function PushSubscribeButton() {
         finish("unsubscribed", false);
       });
 
-    // 이미 알림 비용 낸 적 있는지 확인 (재활성화는 무료) — 실패해도 무시
     fetch("/api/push/status")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -78,35 +84,63 @@ export function PushSubscribeButton() {
   const subscribe = async () => {
     setBusy(true);
     setNeedCredit(false);
+    setErrMsg(null);
     try {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {
         setStatus(perm === "denied" ? "denied" : "unsubscribed");
         setChecked(false);
+        if (perm === "denied") {
+          setErrMsg(
+            "알림 권한이 거부됐어요. 기기 설정 → 카타이밍 → 알림을 허용해 주세요.",
+          );
+        }
         return;
       }
-      const reg = await navigator.serviceWorker.ready;
+
+      const reg = await withTimeout(
+        navigator.serviceWorker.ready,
+        10000,
+        "서비스워커 준비",
+      );
+
+      // 기존 구독이 있으면(예전 키 등) 먼저 해지 후 새로 구독 — 키 충돌 방지
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) {
+        try {
+          await existing.unsubscribe();
+        } catch {
+          // 무시
+        }
+      }
+
       const key = urlBase64ToUint8Array(VAPID_PUBLIC!);
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: key.buffer as ArrayBuffer,
-      });
+      const sub = await withTimeout(
+        reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key.buffer as ArrayBuffer,
+        }),
+        15000,
+        "푸시 구독",
+      );
+
       const json = sub.toJSON();
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
-      });
+      const res = await withTimeout(
+        fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+        }),
+        15000,
+        "서버 저장",
+      );
       const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setStatus("subscribed");
         setChecked(true);
-        if (data?.charged > 0) {
-          setCharged(data.charged);
-          setAlreadyPaid(true);
-        } else {
-          setAlreadyPaid(true);
-        }
+        setAlreadyPaid(true);
+        if (data?.charged > 0) setCharged(data.charged);
       } else if (res.status === 402) {
         try {
           await sub.unsubscribe();
@@ -116,9 +150,16 @@ export function PushSubscribeButton() {
         setNeedCredit(true);
         setStatus("unsubscribed");
         setChecked(false);
+      } else {
+        setErrMsg(data?.error ?? `알림 설정 실패 (코드 ${res.status})`);
+        setChecked(false);
       }
-    } catch {
+    } catch (e) {
       setChecked(false);
+      setErrMsg(
+        (e instanceof Error ? e.message : "알 수 없는 오류") +
+          " — 잠시 후 다시 시도하거나, 홈 화면에 추가한 앱에서 켜보세요.",
+      );
     } finally {
       setBusy(false);
     }
@@ -126,31 +167,34 @@ export function PushSubscribeButton() {
 
   const unsubscribe = async () => {
     setBusy(true);
+    setErrMsg(null);
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await withTimeout(
+        navigator.serviceWorker.ready,
+        10000,
+        "서비스워커 준비",
+      );
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: sub.endpoint }),
-        });
+        }).catch(() => {});
         await sub.unsubscribe();
       }
       setStatus("unsubscribed");
       setChecked(false);
-    } catch {
-      // 무시
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : "해제 실패");
     } finally {
       setBusy(false);
     }
   };
 
-  // 저장하기: 체크 상태에 맞춰 구독/해지 적용
   const save = async () => {
     setCharged(0);
     if (checked && status !== "subscribed") {
-      // 켜기 — 최초면 500 차감 확인
       if (!alreadyPaid) {
         const ok = window.confirm(
           `매각 알림을 켜면 ${ENABLE_COST}캐시가 1회 차감됩니다.\n(한 번만 차감되고, 이후 끄고 켜도 추가 차감은 없어요)\n\n계속할까요?`,
@@ -173,12 +217,12 @@ export function PushSubscribeButton() {
   if (status === "unsupported") {
     return (
       <p className="rounded-xl border border-border bg-surface px-3 py-2.5 text-xs text-muted">
-        이 브라우저에서는 휴대폰 푸시 알림을 지원하지 않아요. 휴대폰 크롬(안드로이드)이나
-        홈 화면에 추가한 앱(아이폰)에서 켤 수 있어요. (이메일 알림은 아래에서 받을 수 있어요)
+        이 브라우저에서는 휴대폰 푸시 알림을 지원하지 않아요. 휴대폰
+        크롬(안드로이드)이나 홈 화면에 추가한 앱(아이폰)에서 켤 수 있어요. (이메일
+        알림은 아래에서 받을 수 있어요)
       </p>
     );
   }
-
   if (status === "denied") {
     return (
       <p className="text-xs text-muted">
@@ -189,7 +233,6 @@ export function PushSubscribeButton() {
   }
 
   const subscribed = status === "subscribed";
-  // 저장 버튼은 체크 상태와 실제 구독 상태가 다를 때만 활성
   const dirty = checked !== subscribed;
 
   return (
@@ -219,13 +262,7 @@ export function PushSubscribeButton() {
         disabled={busy || !dirty}
         className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
       >
-        {busy
-          ? "처리 중..."
-          : !dirty
-            ? subscribed
-              ? "알림 켜짐 ✓"
-              : "저장하기"
-            : "저장하기"}
+        {busy ? "처리 중..." : !dirty && subscribed ? "알림 켜짐 ✓" : "저장하기"}
       </button>
 
       {charged > 0 && (
@@ -240,6 +277,11 @@ export function PushSubscribeButton() {
           <a href="/credits/charge" className="font-semibold underline">
             충전하기 →
           </a>
+        </p>
+      )}
+      {errMsg && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          ⚠️ {errMsg}
         </p>
       )}
     </div>
