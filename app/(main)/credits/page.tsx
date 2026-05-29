@@ -10,6 +10,8 @@ import {
 } from "@/lib/credits/server";
 import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
 import { formatDate } from "@/lib/utils/format";
+import { APP_URL } from "@/lib/constants/app";
+import { ReferralCard } from "@/components/profile/ReferralCard";
 
 const TYPE_LABEL: Record<string, string> = {
   signup_bonus: "신규 가입 보너스",
@@ -77,6 +79,8 @@ export default async function CreditsPage() {
           </Link>
         )}
       </Card>
+
+      <ReferralCard link={`${APP_URL}/r/${user.id}`} />
 
       <Card className="flex flex-col gap-2">
         <CardTitle className="text-sm">이번 달 무료 시세 분석</CardTitle>

@@ -4,6 +4,8 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
 import { formatMileage } from "@/lib/utils/format";
+import { APP_URL } from "@/lib/constants/app";
+import { ReferralCard } from "@/components/profile/ReferralCard";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -102,6 +104,8 @@ export default async function DashboardPage() {
           <CardDescription>적정 시점이 오면 알려드려요</CardDescription>
         </Card>
       </section>
+
+      {user && <ReferralCard link={`${APP_URL}/r/${user.id}`} />}
     </div>
   );
 }
