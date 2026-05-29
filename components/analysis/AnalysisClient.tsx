@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
 import { ExternalQuotesPanel } from "./ExternalQuotesPanel";
 
 type VehicleOption = {
@@ -248,9 +249,19 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
         >
           {loading ? "분석 중..." : "AI 시세 분석 요청"}
         </Button>
+        <Button
+          onClick={() => runAnalysis(true)}
+          disabled={loading || !selectedId}
+          variant="outline"
+          fullWidth
+        >
+          {loading ? "분석 중..." : "🔄 최신 시세로 다시 분석"}
+        </Button>
         <p className="text-xs text-muted">
-          24시간 이내 분석이 있으면 캐시된 결과가 즉시 반환됩니다. 새로 분석하려면
-          결과 카드의 &quot;최신 분석 요청&quot; 버튼을 눌러주세요.
+          24시간 이내 분석은 저장된 결과를 무료로 즉시 보여드려요. 시세는 매일
+          바뀌니, 최신 시세가 궁금하면 &quot;다시 분석&quot;을 눌러주세요. (매월{" "}
+          {FREE_ANALYSIS_PER_MONTH}회 무료, 이후 1회당{" "}
+          {CREDIT_COSTS.analysisOverage} 캐시)
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
       </Card>
