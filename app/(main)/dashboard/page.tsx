@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMileage } from "@/lib/utils/format";
 import { APP_URL } from "@/lib/constants/app";
 import { ReferralCard } from "@/components/profile/ReferralCard";
+import { InstallPrompt } from "@/components/layout/InstallPrompt";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -30,6 +31,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <InstallPrompt />
+
       <section>
         <p className="text-sm text-muted">안녕하세요</p>
         <h1 className="text-2xl font-bold text-foreground">
