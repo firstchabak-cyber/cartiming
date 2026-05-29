@@ -110,7 +110,7 @@ export default async function AdminUserDetailPage({
                   </span>
                 </div>
                 <Link
-                  href={`/vehicles/${v.id}`}
+                  href={`/admin/vehicles/${v.id}`}
                   className="text-primary hover:underline"
                 >
                   →

@@ -134,24 +134,25 @@ export async function POST(request: Request) {
     }
   }
 
-  // 무료 5회 초과 시 캐시 차감
+  // 무료 5회 초과 여부만 먼저 판단 (차감은 분석 성공 후)
   const usedThisMonth = await getMonthlyAnalysisCount(user.id);
   const isFreeAnalysis = usedThisMonth < FREE_ANALYSIS_PER_MONTH;
+
+  // 유료 사용자는 잔액 사전 확인 — 부족하면 호출조차 안 함
   if (!isFreeAnalysis) {
-    const spend = await spendCredits({
-      amount: CREDIT_COSTS.analysisOverage,
-      type: "analysis_overage",
-      description: `시세 분석 추가 (${usedThisMonth + 1}회차)`,
-      refId: vehicle.id,
-    });
-    if (!spend.ok) {
+    const { data: credits } = await supabase
+      .from("user_credits")
+      .select("balance, lifetime_member")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const hasEnough =
+      credits?.lifetime_member ||
+      (credits?.balance ?? 0) >= CREDIT_COSTS.analysisOverage;
+    if (!hasEnough) {
       return NextResponse.json(
         {
-          error:
-            spend.reason === "insufficient_credits"
-              ? `이번 달 무료 분석 ${FREE_ANALYSIS_PER_MONTH}회를 모두 사용했습니다. 추가 분석은 ${CREDIT_COSTS.analysisOverage} 캐시가 필요해요.`
-              : spend.message,
-          code: spend.reason,
+          error: `이번 달 무료 분석 ${FREE_ANALYSIS_PER_MONTH}회를 모두 사용했습니다. 추가 분석은 ${CREDIT_COSTS.analysisOverage} 캐시가 필요해요.`,
+          code: "insufficient_credits",
           required: CREDIT_COSTS.analysisOverage,
         },
         { status: 402 },
@@ -183,6 +184,7 @@ export async function POST(request: Request) {
       msg.toLowerCase().includes("overload") ||
       msg.toLowerCase().includes("high demand") ||
       msg.toLowerCase().includes("unavailable");
+    // 호출 실패 — 캐시는 아직 차감 안 했으므로 환불 불필요
     return NextResponse.json(
       {
         error: isOverload
@@ -193,6 +195,26 @@ export async function POST(request: Request) {
       },
       { status: isOverload ? 503 : 502 },
     );
+  }
+
+  // 분석 호출 성공 후에만 캐시 차감
+  if (!isFreeAnalysis) {
+    const spend = await spendCredits({
+      amount: CREDIT_COSTS.analysisOverage,
+      type: "analysis_overage",
+      description: `시세 분석 추가 (${usedThisMonth + 1}회차)`,
+      refId: vehicle.id,
+    });
+    if (!spend.ok) {
+      // 사전 잔액 검사 통과했는데 차감 실패 — race condition.
+      // 분석 결과는 이미 받았으니 그대로 반환하되 로그만 남김.
+      console.error(
+        "캐시 차감 실패 (분석은 성공)",
+        spend.reason,
+        spend.message,
+        user.id,
+      );
+    }
   }
 
   let json: unknown;
