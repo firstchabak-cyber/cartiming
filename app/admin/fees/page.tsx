@@ -4,7 +4,14 @@ import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 import { FEE_STATUS_LABEL } from "@/lib/sales/fee";
 import { FeeStatusButton } from "@/components/admin/FeeStatusButton";
+import { RevenueCsvButton } from "@/components/admin/RevenueCsvButton";
+import { getRevenueSummary } from "@/lib/admin/revenue";
 import { BUSINESS_INFO } from "@/lib/constants/business";
+
+function monthLabel(key: string): string {
+  const [y, m] = key.split("-");
+  return `${y}년 ${Number(m)}월`;
+}
 
 type FeeRow = {
   id: string;
@@ -36,14 +43,17 @@ type DealerProfile = {
 
 export default async function AdminFeesPage() {
   const admin = createAdminClient();
-  const { data: txns } = await admin
-    .from("sale_transactions")
-    .select(
-      "id, channel, sold_price, sold_at, fee_amount, fee_status, fee_charged_at, fee_paid_at, fee_payment_reported_at, fee_payment_method, fee_note, snapshot_manufacturer, snapshot_model, snapshot_year, source_sale_request_id",
-    )
-    .eq("channel", "cartiming")
-    .order("sold_at", { ascending: false })
-    .limit(200);
+  const [{ data: txns }, revenue] = await Promise.all([
+    admin
+      .from("sale_transactions")
+      .select(
+        "id, channel, sold_price, sold_at, fee_amount, fee_status, fee_charged_at, fee_paid_at, fee_payment_reported_at, fee_payment_method, fee_note, snapshot_manufacturer, snapshot_model, snapshot_year, source_sale_request_id",
+      )
+      .eq("channel", "cartiming")
+      .order("sold_at", { ascending: false })
+      .limit(200),
+    getRevenueSummary(),
+  ]);
 
   const list = (txns as FeeRow[]) ?? [];
 
@@ -140,14 +150,143 @@ export default async function AdminFeesPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-bold text-foreground">수수료 정산</h1>
+        <h1 className="text-2xl font-bold text-foreground">정산 · 매출</h1>
         <p className="text-sm text-muted">
-          카타이밍 통한 매각 완료 건의 딜러 수수료 추적 (1,000만원 미만 15만원
-          / 이상 1.5%)
+          캐시 충전 매출과 매각 수수료를 한곳에서 관리합니다.
         </p>
       </header>
+
+      {/* ── 매출 요약 ───────────────────────────── */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base font-semibold text-foreground">💵 매출 요약</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Card className="flex flex-col gap-1 border-primary/40 bg-primary/5">
+            <p className="text-xs text-muted">총 매출 (누적)</p>
+            <p className="text-xl font-bold text-primary">
+              {formatKRW(revenue.grandTotal)}
+            </p>
+            <p className="text-[10px] text-muted">
+              캐시 {revenue.cashCountTotal}건 · 수수료 {revenue.feeCountTotal}건
+            </p>
+          </Card>
+          <Card className="flex flex-col gap-1">
+            <p className="text-xs text-muted">캐시 매출 (누적)</p>
+            <p className="text-lg font-bold text-foreground">
+              {formatKRW(revenue.cashRevenueTotal)}
+            </p>
+            <p className="text-[10px] text-muted">
+              충전 결제 {revenue.cashCountTotal}건
+            </p>
+          </Card>
+          <Card className="flex flex-col gap-1">
+            <p className="text-xs text-muted">매각 수수료 (누적)</p>
+            <p className="text-lg font-bold text-foreground">
+              {formatKRW(revenue.feeRevenueTotal)}
+            </p>
+            <p className="text-[10px] text-muted">
+              입금 완료 {revenue.feeCountTotal}건
+            </p>
+          </Card>
+          <Card className="flex flex-col gap-1">
+            <p className="text-xs text-muted">이번 달 매출</p>
+            <p className="text-lg font-bold text-success">
+              {formatKRW(revenue.thisMonth.total)}
+            </p>
+            <p className="text-[10px] text-muted">
+              캐시 {formatKRW(revenue.thisMonth.cashRevenue)} · 수수료{" "}
+              {formatKRW(revenue.thisMonth.feeRevenue)}
+            </p>
+          </Card>
+        </div>
+        {revenue.feeReceivable > 0 && (
+          <p className="text-xs text-warning">
+            ⚠️ 미수금(청구했으나 미입금) {formatKRW(revenue.feeReceivable)} ·{" "}
+            {revenue.feeReceivableCount}건 — 아래 정산 표에서 입금 확인 필요
+          </p>
+        )}
+      </section>
+
+      {/* ── 월별 매출 ───────────────────────────── */}
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground">
+            📅 월별 매출
+          </h2>
+          <RevenueCsvButton monthly={revenue.monthly} />
+        </div>
+        {revenue.monthly.length === 0 ? (
+          <Card className="py-6 text-center">
+            <CardDescription>아직 매출이 없습니다.</CardDescription>
+          </Card>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead className="border-b border-border bg-surface text-xs text-muted">
+                <tr>
+                  <th className="p-2 text-left">월</th>
+                  <th className="p-2 text-right">캐시 매출</th>
+                  <th className="p-2 text-right">매각 수수료</th>
+                  <th className="p-2 text-right">합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {revenue.monthly.map((m) => (
+                  <tr key={m.month} className="border-b border-border">
+                    <td className="p-2 font-semibold">{monthLabel(m.month)}</td>
+                    <td className="p-2 text-right">
+                      {formatKRW(m.cashRevenue)}
+                      <span className="ml-1 text-[10px] text-muted">
+                        ({m.cashCount})
+                      </span>
+                    </td>
+                    <td className="p-2 text-right">
+                      {formatKRW(m.feeRevenue)}
+                      <span className="ml-1 text-[10px] text-muted">
+                        ({m.feeCount})
+                      </span>
+                    </td>
+                    <td className="p-2 text-right font-bold text-primary">
+                      {formatKRW(m.total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t-2 border-border bg-surface text-sm font-bold">
+                <tr>
+                  <td className="p-2">누적 합계</td>
+                  <td className="p-2 text-right">
+                    {formatKRW(revenue.cashRevenueTotal)}
+                  </td>
+                  <td className="p-2 text-right">
+                    {formatKRW(revenue.feeRevenueTotal)}
+                  </td>
+                  <td className="p-2 text-right text-primary">
+                    {formatKRW(revenue.grandTotal)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+            <p className="mt-1 text-[10px] text-muted">
+              ※ 캐시 매출은 결제 입금일, 매각 수수료는 수수료 입금일 기준(한국
+              시간). 괄호 안은 건수.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ── 수수료 정산 상세 ─────────────────────── */}
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            🧾 매각 수수료 정산
+          </h2>
+          <p className="text-xs text-muted">
+            카타이밍 통한 매각 완료 건의 딜러 수수료 추적 (1,000만원 미만 15만원
+            / 이상 1.5%)
+          </p>
+        </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="flex flex-col gap-1">
@@ -279,6 +418,7 @@ export default async function AdminFeesPage() {
           </p>
         </div>
       )}
+      </section>
     </div>
   );
 }
