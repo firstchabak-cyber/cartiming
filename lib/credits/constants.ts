@@ -3,7 +3,7 @@ export const CREDIT_COSTS = {
   addVehicle: 1000,
 } as const;
 
-export const FREE_ANALYSIS_PER_MONTH = 2;
+export const FREE_ANALYSIS_PER_MONTH = 1;
 export const SIGNUP_BONUS = 3000;
 
 // 매각 후 슬롯 회복 유효 기간 (개월)
