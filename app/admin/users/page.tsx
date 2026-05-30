@@ -12,8 +12,20 @@ type UserRow = {
 
 export default async function AdminUsersPage() {
   const admin = createAdminClient();
-  const { data: usersData } = await admin.auth.admin.listUsers();
-  const users = (usersData?.users ?? []) as UserRow[];
+  // listUsers 전체스캔(페이지당 50명) 대신 profiles 단일 쿼리 (가입 시 트리거로 자동생성)
+  const { data: profilesData } = await admin
+    .from("profiles")
+    .select("id, email, name, created_at")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  const users: UserRow[] = (profilesData ?? []).map(
+    (p: { id: string; email: string | null; name: string | null; created_at: string }) => ({
+      id: p.id,
+      email: p.email,
+      user_metadata: { name: p.name },
+      created_at: p.created_at,
+    }),
+  );
 
   // 사용자별 캐시 잔액 + 차량 수 묶기
   const userIds = users.map((u) => u.id);

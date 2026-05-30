@@ -115,14 +115,15 @@ export default async function AdminFeesPage() {
   for (const p of (dealerProfiles ?? []) as DealerProfile[]) {
     profileMap.set(p.user_id, p);
   }
-  // 딜러 이메일 (auth)
+  // 딜러 이메일 — 필요한 id 만 profiles 에서 조회 (전체 listUsers 대신)
   const emailMap = new Map<string, string>();
   if (dealerUserIds.length > 0) {
-    const { data: authList } = await admin.auth.admin.listUsers();
-    for (const u of authList?.users ?? []) {
-      if (u.email && dealerUserIds.includes(u.id)) {
-        emailMap.set(u.id, u.email);
-      }
+    const { data: profs } = await admin
+      .from("profiles")
+      .select("id, email")
+      .in("id", dealerUserIds);
+    for (const p of profs ?? []) {
+      if (p.email) emailMap.set(p.id, p.email);
     }
   }
 

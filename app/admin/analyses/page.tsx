@@ -96,14 +96,16 @@ export default async function AdminAnalysesPage({
   const userIds = Array.from(new Set(list.map((l) => l.user_id)));
   const userMap = new Map<string, { email: string; name: string }>();
   if (userIds.length > 0) {
-    const { data: authList } = await admin.auth.admin.listUsers();
-    for (const u of authList?.users ?? []) {
-      if (userIds.includes(u.id)) {
-        userMap.set(u.id, {
-          email: u.email ?? "—",
-          name: (u.user_metadata?.name as string | undefined) ?? "—",
-        });
-      }
+    // 필요한 id 만 profiles 에서 조회 (전체 listUsers 대신)
+    const { data: profs } = await admin
+      .from("profiles")
+      .select("id, email, name")
+      .in("id", userIds as string[]);
+    for (const p of profs ?? []) {
+      userMap.set(p.id, {
+        email: p.email ?? "—",
+        name: p.name ?? "—",
+      });
     }
   }
 

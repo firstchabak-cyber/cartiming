@@ -79,13 +79,20 @@ export async function POST(
     })
     .eq("id", params.id);
 
-  // 운영자(들)에게 알림 — listUsers 1회만
+  // 운영자(들)에게 알림 — 관리자 이메일만 profiles 에서 조회 (전체 listUsers 대신)
   const car = `${txn.snapshot_manufacturer} ${txn.snapshot_model}`;
   const feeStr = (txn.fee_amount ?? 0).toLocaleString("ko-KR");
-  const { data: admins } = await admin.auth.admin.listUsers();
-  const adminUserIds = (admins?.users ?? [])
-    .filter((u: { email?: string }) => u.email && ADMIN_EMAILS.has(u.email.toLowerCase()))
-    .map((u: { id: string }) => u.id);
+  const adminEmails = Array.from(ADMIN_EMAILS);
+  const { data: adminProfiles } = await admin
+    .from("profiles")
+    .select("id, email")
+    .in("email", adminEmails);
+  const adminUserIds = (adminProfiles ?? [])
+    .filter(
+      (p: { email?: string | null }) =>
+        p.email && ADMIN_EMAILS.has(p.email.toLowerCase()),
+    )
+    .map((p: { id: string }) => p.id);
   if (adminUserIds.length > 0) {
     const notifications = adminUserIds.map((adminUserId: string) => ({
       user_id: adminUserId,
