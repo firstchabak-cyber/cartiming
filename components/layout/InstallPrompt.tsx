@@ -116,9 +116,10 @@ export function InstallPrompt() {
             {isIos ? "추가 방법 보기" : "홈 화면에 추가"}
           </button>
           <p className="text-[11px] text-muted">
-            ※ &quot;출처를 알 수 없는 앱&quot; 같은 안내가 떠도 정상이에요.
-            앱스토어를 거치지 않고 홈 화면에 바로 추가되는 방식이라 그렇습니다.
-            안심하고 &quot;추가&quot;를 눌러주세요.
+            ※ 설치 중 &quot;안전하지 않은 앱&quot; 같은 구글 안내가 떠도
+            일시적인 현상이에요. 정식 앱은 추후 플레이스토어에 등록될
+            예정입니다. 안심하고 &quot;무시하고 설치&quot; 또는
+            &quot;추가&quot;를 눌러주세요.
           </p>
         </>
       ) : (
