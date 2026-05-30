@@ -7,6 +7,7 @@ import { formatKRW, formatDate, formatMileage } from "@/lib/utils/format";
 import { AdminBidForm } from "@/components/admin/AdminBidForm";
 import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
 import { ApproveSaleButton } from "@/components/admin/ApproveSaleButton";
+import { RequestInfoButton } from "@/components/admin/RequestInfoButton";
 
 const STATUS_META: Record<
   string,
@@ -28,7 +29,7 @@ export default async function AdminSaleDetailPage({
   const { data: sale } = await admin
     .from("sale_requests")
     .select(
-      "id, vehicle_id, user_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, approved_at, created_at, matched_at, completed_at, selected_bid_id",
+      "id, vehicle_id, user_id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, admin_note, bidding_closes_at, approved_at, created_at, matched_at, completed_at, selected_bid_id",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -253,6 +254,12 @@ export default async function AdminSaleDetailPage({
             <p className="mt-1 text-muted">{sale.additional_notes}</p>
           </div>
         )}
+        {sale.admin_note && (
+          <div className="mt-2 rounded-lg border border-warning/40 bg-warning/5 p-3 text-xs">
+            <p className="font-semibold text-warning">📝 보완 요청한 내용:</p>
+            <p className="mt-1 text-foreground">{sale.admin_note}</p>
+          </div>
+        )}
       </Card>
 
       {photos.length > 0 && (
@@ -375,7 +382,12 @@ export default async function AdminSaleDetailPage({
       </Card>
 
       {sale.status === "pending" && (
-        <ApproveSaleButton saleRequestId={sale.id} />
+        <div className="flex flex-col gap-2">
+          <ApproveSaleButton saleRequestId={sale.id} />
+          <RequestInfoButton
+            endpoint={`/api/admin/sales/${sale.id}/request-info`}
+          />
+        </div>
       )}
 
       {sale.status === "bidding" && (
