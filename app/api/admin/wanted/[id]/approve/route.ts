@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin/check";
 import { yearRangeLabel } from "@/lib/wanted/format";
+import { createAndDispatch } from "@/lib/notify/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -53,23 +54,24 @@ export async function POST(
     // 한 차주가 같은 조건 차를 여러 대 가진 경우 1건만
     const seen = new Set<string>();
     const yearLabel = yearRangeLabel(w.year_min, w.year_max);
-    const rows = [];
+    const title = `🚗 내 차를 찾는 딜러가 있어요!`;
+    const message =
+      `${w.dealer_name} 딜러가 "${w.manufacturer} ${w.model} ${yearLabel}" 차량을 구하고 있습니다.\n` +
+      `내 차를 내놓으면 견적을 받아볼 수 있어요. '딜러가 찾는 차' 게시판에서 확인하세요.`;
+
     for (const v of matches as Array<{ id: string; user_id: string }>) {
       if (seen.has(v.user_id)) continue;
       seen.add(v.user_id);
-      rows.push({
-        user_id: v.user_id,
-        vehicle_id: v.id,
-        type: "system" as const,
-        title: `🚗 내 차를 찾는 딜러가 있어요!`,
-        message:
-          `${w.dealer_name} 딜러가 "${w.manufacturer} ${w.model} ${yearLabel}" 차량을 구하고 있습니다.\n` +
-          `내 차를 내놓으면 견적을 받아볼 수 있어요. '딜러가 찾는 차' 게시판에서 확인하세요.`,
+      // 인앱 + 이메일(동의자) 동시 발송
+      await createAndDispatch(admin, {
+        userId: v.user_id,
+        vehicleId: v.id,
+        type: "system",
+        title,
+        message,
+        email: true,
       });
-    }
-    if (rows.length > 0) {
-      await admin.from("notifications").insert(rows);
-      notified = rows.length;
+      notified++;
     }
   }
 
