@@ -22,10 +22,12 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const to = url.searchParams.get("to") || user.email!;
 
-  const host = process.env.SMTP_HOST;
-  const userEnv = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || "카타이밍 <help@cartiming.app>";
+  const host = process.env.SMTP_HOST?.trim();
+  const userEnv = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  const from = (
+    process.env.SMTP_FROM || "카타이밍 <help@cartiming.app>"
+  ).trim();
 
   const config = {
     host: host ?? "(없음)",

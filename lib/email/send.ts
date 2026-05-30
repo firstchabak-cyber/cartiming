@@ -5,15 +5,16 @@ let transporter: nodemailer.Transporter | null = null;
 /** env SMTP 설정으로 transport 1회 생성. 미설정이면 null. */
 function getTransporter(): nodemailer.Transporter | null {
   if (transporter) return transporter;
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  // env 값에 실수로 들어간 앞뒤 공백/줄바꿈 제거 (복붙 사고 방지)
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
   if (!host || !user || !pass) return null;
 
   transporter = nodemailer.createTransport({
     host, // 네이버웍스: smtp.worksmobile.com
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === "true", // 465면 true, 587이면 false(STARTTLS)
+    port: Number((process.env.SMTP_PORT || "587").trim()),
+    secure: (process.env.SMTP_SECURE || "").trim() === "true", // 465면 true, 587이면 false(STARTTLS)
     auth: { user, pass },
   });
   return transporter;
@@ -30,7 +31,9 @@ export async function sendEmail(args: {
 }): Promise<boolean> {
   const t = getTransporter();
   if (!t) return false;
-  const from = process.env.SMTP_FROM || "카타이밍 <help@cartiming.app>";
+  const from = (
+    process.env.SMTP_FROM || "카타이밍 <help@cartiming.app>"
+  ).trim();
   try {
     await t.sendMail({
       from,
