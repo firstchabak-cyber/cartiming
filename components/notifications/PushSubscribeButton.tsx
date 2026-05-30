@@ -225,10 +225,31 @@ export function PushSubscribeButton() {
   }
   if (status === "denied") {
     return (
-      <p className="text-xs text-muted">
-        브라우저에서 알림이 차단돼 있어요. 기기 설정에서 카타이밍 알림을 허용해
-        주세요.
-      </p>
+      <div className="flex flex-col gap-2 rounded-xl border border-warning/40 bg-warning/5 p-3">
+        <p className="text-sm font-semibold text-foreground">
+          🔔 알림이 차단돼 있어요
+        </p>
+        <p className="text-xs text-muted">
+          예전에 &quot;차단&quot;을 눌렀던 기록이 남아 있어요. 아래 방법으로 푼
+          뒤 다시 시도해 주세요:
+        </p>
+        <ol className="ml-1 list-decimal space-y-0.5 pl-4 text-xs text-foreground">
+          <li>주소창 왼쪽 자물쇠(🔒) 아이콘 탭</li>
+          <li>&quot;권한&quot; 또는 &quot;사이트 설정&quot; → &quot;알림&quot;</li>
+          <li>&quot;허용&quot;으로 변경 후 이 페이지 새로고침</li>
+        </ol>
+        <p className="text-[11px] text-primary">
+          💡 더 쉬운 방법: 홈 화면에 추가한 카타이밍 앱으로 열면 권한 팝업이
+          새로 떠요.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-surface"
+        >
+          새로고침하고 다시 확인
+        </button>
+      </div>
     );
   }
 
