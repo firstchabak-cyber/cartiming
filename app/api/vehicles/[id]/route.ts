@@ -57,6 +57,7 @@ const patchSchema = z
       .optional(),
     seating_capacity: z.number().int().gte(1).lte(60).nullable().optional(),
     options: z.array(z.string().trim().min(1)).nullable().optional(),
+    purchase_price: z.number().int().nonnegative().nullable().optional(),
     loan_principal: z.number().int().nonnegative().nullable().optional(),
     loan_started_at: z
       .string()

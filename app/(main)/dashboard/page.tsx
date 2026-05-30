@@ -29,6 +29,15 @@ export default async function DashboardPage() {
 
   const hasVehicles = (vehicles?.length ?? 0) > 0;
 
+  // 딜러로 등록된 사용자에게는 딜러 센터 바로가기를 노출 (하단 네비에는 딜러 진입점이 없으므로)
+  const { data: dealer } = user
+    ? await supabase
+        .from("dealers")
+        .select("verified")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+
   return (
     <div className="flex flex-col gap-5">
       <InstallPrompt />
@@ -109,6 +118,22 @@ export default async function DashboardPage() {
           </Card>
         </Link>
       </section>
+
+      {dealer && (
+        <Link href="/dealer/listings">
+          <Card className="flex items-center justify-between gap-3 border-primary/30 bg-primary/5">
+            <div>
+              <CardTitle className="text-sm">🏷 딜러 센터</CardTitle>
+              <CardDescription>
+                {dealer.verified
+                  ? "매물 입찰 · 내 입찰/수수료 관리"
+                  : "인증 대기 중 · 매물 조회 가능"}
+              </CardDescription>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted" />
+          </Card>
+        </Link>
+      )}
 
       {user && <ReferralCard link={`${APP_URL}/r/${user.id}`} />}
     </div>

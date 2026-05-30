@@ -48,6 +48,14 @@ const vehicleSchema = z.object({
     .optional(),
   seating_capacity: z.number().int().gte(1).lte(60).optional(),
   options: z.array(z.string().trim().min(1)).optional(),
+  purchase_price: z.number().int().nonnegative().optional(),
+  loan_principal: z.number().int().nonnegative().optional(),
+  loan_started_at: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  loan_months: z.number().int().gte(1).lte(240).optional(),
+  loan_apr: z.number().gte(0).lte(30).optional(),
 });
 
 export async function POST(request: Request) {
@@ -127,6 +135,11 @@ export async function POST(request: Request) {
       inspection_valid_until: input.inspection_valid_until ?? null,
       seating_capacity: input.seating_capacity ?? null,
       options: input.options && input.options.length > 0 ? input.options : null,
+      purchase_price: input.purchase_price ?? null,
+      loan_principal: input.loan_principal ?? null,
+      loan_started_at: input.loan_started_at ?? null,
+      loan_months: input.loan_months ?? null,
+      loan_apr: input.loan_apr ?? null,
     })
     .select("id")
     .single();
