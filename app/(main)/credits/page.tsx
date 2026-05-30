@@ -82,6 +82,39 @@ export default async function CreditsPage() {
 
       <ReferralCard link={`${APP_URL}/r/${user.id}`} />
 
+      {/* 캐시 차감 기준 안내 */}
+      <Card className="flex flex-col gap-2 bg-surface/50">
+        <CardTitle className="text-sm">💡 캐시는 이렇게 차감돼요</CardTitle>
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          <li className="flex items-center justify-between py-2">
+            <span className="text-foreground">AI 시세 분석 (추가 1회)</span>
+            <span className="font-semibold text-foreground">
+              {CREDIT_COSTS.analysisOverage.toLocaleString("ko-KR")} 캐시
+            </span>
+          </li>
+          <li className="flex items-center justify-between py-2">
+            <span className="text-foreground">차량 추가 등록 (1대)</span>
+            <span className="font-semibold text-foreground">
+              {CREDIT_COSTS.addVehicle.toLocaleString("ko-KR")} 캐시
+            </span>
+          </li>
+          <li className="flex items-center justify-between py-2">
+            <span className="text-foreground">이메일 알림 켜기 (최초 1회)</span>
+            <span className="font-semibold text-foreground">500 캐시</span>
+          </li>
+        </ul>
+        <div className="rounded-lg bg-success/10 px-3 py-2 text-[11px] leading-relaxed text-success">
+          🎁 가입 혜택: 무료 시세 분석 {FREE_ANALYSIS_PER_MONTH}회 + 차량 1대 무료
+          등록 + 가입 보너스 2,000 캐시
+          <br />
+          🤝 친구 초대 시 친구가 첫 분석을 완료하면 1,000 캐시 적립
+        </div>
+        <p className="text-[11px] text-muted">
+          · 캐시는 카타이밍 서비스 내에서만 사용되며 현금 인출·이체는 불가합니다.
+          미사용 충전 캐시는 결제 후 7일 이내 환불 가능합니다.
+        </p>
+      </Card>
+
       <Card className="flex flex-col gap-2">
         <CardTitle className="text-sm">무료 시세 분석 (가입 혜택)</CardTitle>
         <p className="text-xl font-bold text-foreground">
