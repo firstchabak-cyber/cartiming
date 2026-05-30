@@ -13,7 +13,7 @@ export default async function DealerRegisterPage() {
   const { data: existing } = await supabase
     .from("dealers")
     .select(
-      "business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count",
+      "business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count, business_reg_doc_path, dealer_card_doc_path",
     )
     .eq("user_id", user.id)
     .maybeSingle();

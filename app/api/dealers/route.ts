@@ -9,6 +9,9 @@ const schema = z.object({
   businessRegNumber: z.string().trim().min(8).max(20),
   contactPhone: z.string().trim().min(1),
   location: z.string().trim().optional(),
+  // 인증 서류 storage 경로 (dealer-docs 버킷). 본인 폴더(user_id/...)만 허용.
+  businessRegDocPath: z.string().trim().max(300).optional(),
+  dealerCardDocPath: z.string().trim().max(300).optional(),
 });
 
 export async function POST(request: Request) {
@@ -34,16 +37,33 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await supabase.from("dealers").upsert(
-    {
-      user_id: user.id,
-      business_name: parsed.data.businessName,
-      business_reg_number: parsed.data.businessRegNumber,
-      contact_phone: parsed.data.contactPhone,
-      location: parsed.data.location ?? null,
-    },
-    { onConflict: "user_id" },
-  );
+  // 서류 경로는 본인 폴더(user_id/...) 인 것만 신뢰 (위조 방지)
+  const ownPrefix = `${user.id}/`;
+  const regDoc =
+    parsed.data.businessRegDocPath &&
+    parsed.data.businessRegDocPath.startsWith(ownPrefix)
+      ? parsed.data.businessRegDocPath
+      : undefined;
+  const cardDoc =
+    parsed.data.dealerCardDocPath &&
+    parsed.data.dealerCardDocPath.startsWith(ownPrefix)
+      ? parsed.data.dealerCardDocPath
+      : undefined;
+
+  const upsertRow: Record<string, unknown> = {
+    user_id: user.id,
+    business_name: parsed.data.businessName,
+    business_reg_number: parsed.data.businessRegNumber,
+    contact_phone: parsed.data.contactPhone,
+    location: parsed.data.location ?? null,
+  };
+  // 새로 업로드한 서류가 있을 때만 갱신 (없으면 기존 값 유지)
+  if (regDoc) upsertRow.business_reg_doc_path = regDoc;
+  if (cardDoc) upsertRow.dealer_card_doc_path = cardDoc;
+
+  const { error } = await supabase
+    .from("dealers")
+    .upsert(upsertRow, { onConflict: "user_id" });
   if (error) {
     return NextResponse.json(
       { error: "딜러 등록 실패", detail: error.message },

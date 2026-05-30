@@ -122,7 +122,7 @@ export default async function DealerLandingPage() {
 
       {/* 안내 */}
       <p className="text-center text-[11px] text-muted">
-        사업자등록증 + 통신판매업 신고증을 보유한 중고차 매매상사 대상입니다.
+        사업자등록증 + 매매사원증을 보유한 중고차 매매사원 대상입니다.
       </p>
     </div>
   );

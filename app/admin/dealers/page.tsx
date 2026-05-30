@@ -18,18 +18,41 @@ type DealerRow = {
   rating_avg: number | null;
   rating_count: number;
   created_at: string;
+  business_reg_doc_path: string | null;
+  dealer_card_doc_path: string | null;
 };
+
+type DealerDocs = { regUrl: string | null; cardUrl: string | null };
 
 export default async function AdminDealersPage() {
   const admin = createAdminClient();
   const { data: dealers } = await admin
     .from("dealers")
     .select(
-      "user_id, business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count, created_at",
+      "user_id, business_name, business_reg_number, contact_phone, location, verified, verified_at, rating_avg, rating_count, created_at, business_reg_doc_path, dealer_card_doc_path",
     )
     .order("created_at", { ascending: false });
 
   const list = (dealers as DealerRow[]) ?? [];
+
+  // 서류 서명 URL 생성 (운영자만 조회, 1시간 유효)
+  const docsMap = new Map<string, DealerDocs>();
+  await Promise.all(
+    list.map(async (d) => {
+      const sign = async (path: string | null) => {
+        if (!path) return null;
+        const { data } = await admin.storage
+          .from("dealer-docs")
+          .createSignedUrl(path, 3600);
+        return data?.signedUrl ?? null;
+      };
+      const [regUrl, cardUrl] = await Promise.all([
+        sign(d.business_reg_doc_path),
+        sign(d.dealer_card_doc_path),
+      ]);
+      docsMap.set(d.user_id, { regUrl, cardUrl });
+    }),
+  );
   const pending = list.filter((d) => !d.verified);
   const approved = list.filter((d) => d.verified);
 
@@ -47,7 +70,7 @@ export default async function AdminDealersPage() {
           <h2 className="text-sm font-semibold text-warning">⏳ 승인 대기</h2>
           <ul className="flex flex-col gap-2">
             {pending.map((d) => (
-              <DealerCard key={d.user_id} d={d} />
+              <DealerCard key={d.user_id} d={d} docs={docsMap.get(d.user_id)} />
             ))}
           </ul>
         </section>
@@ -58,7 +81,7 @@ export default async function AdminDealersPage() {
           <h2 className="text-sm font-semibold text-success">✅ 승인된 딜러</h2>
           <ul className="flex flex-col gap-2">
             {approved.map((d) => (
-              <DealerCard key={d.user_id} d={d} />
+              <DealerCard key={d.user_id} d={d} docs={docsMap.get(d.user_id)} />
             ))}
           </ul>
         </section>
@@ -73,7 +96,7 @@ export default async function AdminDealersPage() {
   );
 }
 
-function DealerCard({ d }: { d: DealerRow }) {
+function DealerCard({ d, docs }: { d: DealerRow; docs?: DealerDocs }) {
   return (
     <li>
       <Card className="flex flex-col gap-2">
@@ -113,6 +136,40 @@ function DealerCard({ d }: { d: DealerRow }) {
           <dt className="text-muted">신청일</dt>
           <dd>{formatDate(d.created_at)}</dd>
         </dl>
+
+        {/* 인증 서류 */}
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
+          <span className="font-semibold text-foreground">📑 서류</span>
+          {docs?.regUrl ? (
+            <a
+              href={docs.regUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-primary/10 px-2 py-0.5 text-primary hover:underline"
+            >
+              사업자등록증 보기
+            </a>
+          ) : (
+            <span className="rounded-md bg-danger/10 px-2 py-0.5 text-danger">
+              사업자등록증 미첨부
+            </span>
+          )}
+          {docs?.cardUrl ? (
+            <a
+              href={docs.cardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-primary/10 px-2 py-0.5 text-primary hover:underline"
+            >
+              매매사원증 보기
+            </a>
+          ) : (
+            <span className="rounded-md bg-danger/10 px-2 py-0.5 text-danger">
+              매매사원증 미첨부
+            </span>
+          )}
+        </div>
+
         {d.verified ? (
           <DealerSuspendButton dealerId={d.user_id} />
         ) : (

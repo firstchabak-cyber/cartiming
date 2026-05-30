@@ -59,7 +59,7 @@ function DealerSignupPageInner() {
       </section>
 
       <p className="text-center text-[11px] text-muted">
-        가입 시 사업자등록증·통신판매업 신고증 보유 사업자임을 확인합니다.
+        가입 후 사업자등록증·매매사원증을 첨부하면 운영자가 확인 후 승인합니다.
       </p>
     </div>
   );
