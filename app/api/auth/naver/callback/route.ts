@@ -52,24 +52,30 @@ export async function GET(request: Request) {
     const password = derivePassword(profile.id);
     const admin = createAdminClient();
 
-    const { data: list, error: listError } = await admin.auth.admin.listUsers();
-    if (listError) {
-      console.error("Naver listUsers failed", listError);
-      return NextResponse.redirect(
-        `${origin}/login?error=naver_failed&reason=list_users&msg=${encodeURIComponent(listError.message)}`,
-      );
-    }
-
+    // 이메일로 후보 사용자 id 조회 — 전체 listUsers 스캔 대신 profiles 테이블 사용
+    // (가입 시 트리거로 profiles 자동 생성됨. 회원 수와 무관하게 즉시 조회)
     type AuthUserLite = {
       id: string;
       email?: string | null;
       deleted_at?: string | null;
     };
-    const sameEmail = (list?.users ?? []).filter(
-      (u: AuthUserLite) => u.email === profile.email,
-    );
-    const existing = sameEmail.find((u: AuthUserLite) => !u.deleted_at);
-    const softDeleted = sameEmail.filter((u: AuthUserLite) => !!u.deleted_at);
+
+    const { data: candidates } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", profile.email);
+    const candidateIds = (candidates ?? []).map((c: { id: string }) => c.id);
+
+    // 각 후보를 getUserById 로 확인해 활성/소프트삭제 구분
+    let existing: AuthUserLite | undefined;
+    const softDeleted: AuthUserLite[] = [];
+    for (const id of candidateIds) {
+      const { data: got } = await admin.auth.admin.getUserById(id);
+      const u = got?.user as AuthUserLite | undefined;
+      if (!u) continue;
+      if (u.deleted_at) softDeleted.push(u);
+      else if (!existing) existing = u;
+    }
 
     for (const stale of softDeleted) {
       const { error: purgeError } = await admin.auth.admin.deleteUser(
