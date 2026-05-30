@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Activity,
   Search,
+  Trash2,
 } from "lucide-react";
 
 const ITEMS = [
@@ -23,6 +24,7 @@ const ITEMS = [
   { href: "/admin/dealers", label: "딜러 관리", icon: Store },
   { href: "/admin/users", label: "고객 관리", icon: Users },
   { href: "/admin/transactions", label: "실거래 데이터", icon: Database },
+  { href: "/admin/deletion-log", label: "삭제 이력", icon: Trash2 },
 ];
 
 export function AdminSidebar({ email }: { email: string }) {
