@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { notifyCreditsChanged } from "@/lib/credits/events";
 import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
 import { ExternalQuotesPanel } from "./ExternalQuotesPanel";
 
@@ -142,6 +143,10 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
         return;
       }
       setResult(data as AnalysisResult);
+      // 유료 분석(캐시 차감)이었으면 상단 캐시 뱃지 즉시 갱신
+      if (!(data as AnalysisResult).cached) {
+        notifyCreditsChanged();
+      }
     } catch {
       setError("네트워크 오류로 분석에 실패했습니다");
     } finally {

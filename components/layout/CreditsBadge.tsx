@@ -1,43 +1,53 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Coins } from "lucide-react";
-
-type CreditsInfo = {
-  balance: number;
-  lifetime: boolean;
-};
+import { CREDITS_CHANGED_EVENT } from "@/lib/credits/events";
 
 export function CreditsBadge() {
-  const [info, setInfo] = useState<CreditsInfo | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [lifetime, setLifetime] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/credits")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled || !d) return;
-        setInfo({ balance: d.balance ?? 0, lifetime: d.lifetime ?? false });
-      })
-      .catch(() => {});
+    let active = true;
+    async function load() {
+      try {
+        const res = await fetch("/api/credits", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!active) return;
+        setBalance(data.balance ?? 0);
+        setLifetime(data.lifetime ?? false);
+      } catch {
+        // 무시
+      }
+    }
+    load();
+
+    // 캐시 변동 이벤트 발생 시 즉시 재조회 (차감 후 바로 반영)
+    const onChanged = () => load();
+    const onFocus = () => load();
+    window.addEventListener(CREDITS_CHANGED_EVENT, onChanged);
+    window.addEventListener("focus", onFocus);
     return () => {
-      cancelled = true;
+      active = false;
+      window.removeEventListener(CREDITS_CHANGED_EVENT, onChanged);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
-  if (!info) return null;
+  if (balance === null) return null;
 
   return (
     <Link
       href="/credits"
-      className="flex items-center gap-1 rounded-full bg-warning/15 px-2 py-1 text-xs font-semibold text-warning hover:bg-warning/25"
-      aria-label="캐시 잔액"
+      className="flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-sm font-semibold text-warning"
     >
-      <Coins className="h-3.5 w-3.5" />
-      {info.lifetime
-        ? "평생"
-        : `${info.balance.toLocaleString("ko-KR")}`}
+      <Coins className="h-4 w-4" />
+      <span>
+        {lifetime ? "평생회원" : `${balance.toLocaleString("ko-KR")} 캐시`}
+      </span>
     </Link>
   );
 }
