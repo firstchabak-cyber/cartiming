@@ -82,8 +82,15 @@ export function NotificationSettings() {
 
   return (
     <Card className="flex flex-col gap-3">
-      <CardTitle className="text-sm">알림 설정</CardTitle>
+      {/* 1) 제목 + 설명 */}
+      <div>
+        <CardTitle className="text-sm">알림 설정</CardTitle>
+        <p className="mt-1 text-[11px] text-muted">
+          매각 적기·시세 변동 같은 중요 알림을 가입하신 이메일로 보내드려요.
+        </p>
+      </div>
 
+      {/* 2) 체크 */}
       <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
         <input
           type="checkbox"
@@ -102,10 +109,8 @@ export function NotificationSettings() {
           )}
         </span>
       </label>
-      <p className="text-[11px] text-muted">
-        매각 적기·시세 변동 같은 중요 알림을 가입하신 이메일로 보내드려요.
-      </p>
 
+      {/* 3) 저장하기 */}
       <button
         type="button"
         onClick={save}
@@ -119,6 +124,7 @@ export function NotificationSettings() {
             : "저장하기"}
       </button>
 
+      {/* 4) 저장 후 결과 문구 */}
       {charged > 0 && (
         <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted">
           ✅ 이메일 알림이 켜졌어요. {charged.toLocaleString("ko-KR")}캐시가
