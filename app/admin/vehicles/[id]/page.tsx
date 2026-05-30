@@ -12,6 +12,7 @@ import {
   type BodyType,
   type VehicleClass,
 } from "@/lib/constants/vehicle";
+import { AdminVehicleEditForm } from "@/components/admin/AdminVehicleEditForm";
 
 export const dynamic = "force-dynamic";
 
@@ -148,6 +149,21 @@ export default async function AdminVehicleDetailPage({
           {v.sold_at && ` · 매각 ${formatDate(v.sold_at)}`}
         </p>
       </header>
+
+      {/* 관리자 수정 */}
+      <AdminVehicleEditForm
+        vehicle={{
+          id: v.id,
+          manufacturer: v.manufacturer,
+          model: v.model,
+          trim: v.trim,
+          year: v.year,
+          mileage: v.mileage,
+          plate_number: v.plate_number,
+          color: v.color,
+          status: v.status,
+        }}
+      />
 
       {/* 차량 기본 정보 */}
       <Card>

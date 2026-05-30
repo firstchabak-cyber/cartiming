@@ -8,6 +8,7 @@ import {
   deadlineInfo,
 } from "@/lib/wanted/format";
 import { WantedApproveButtons } from "@/components/admin/WantedApproveButtons";
+import { WantedEditForm } from "@/components/admin/WantedEditForm";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,19 @@ export default async function AdminWantedPage() {
           <span>등록: {w.created_at.slice(0, 10)}</span>
         </div>
         {w.memo && <p className="text-xs text-foreground">💬 {w.memo}</p>}
+        <WantedEditForm
+          wanted={{
+            id: w.id,
+            manufacturer: w.manufacturer,
+            model: w.model,
+            year_min: w.year_min,
+            year_max: w.year_max,
+            max_mileage: w.max_mileage,
+            max_price: w.max_price == null ? null : Number(w.max_price),
+            region: w.region,
+            memo: w.memo,
+          }}
+        />
         {w.status === "pending" && <WantedApproveButtons id={w.id} />}
         {w.status === "rejected" && w.reject_reason && (
           <p className="text-xs text-danger">반려 사유: {w.reject_reason}</p>

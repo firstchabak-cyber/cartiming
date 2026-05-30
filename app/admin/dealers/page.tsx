@@ -3,6 +3,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/format";
 import { DealerVerifyButton } from "@/components/admin/DealerVerifyButton";
+import { DealerEditForm } from "@/components/admin/DealerEditForm";
 
 type DealerRow = {
   user_id: string;
@@ -111,6 +112,15 @@ function DealerCard({ d }: { d: DealerRow }) {
           <dd>{formatDate(d.created_at)}</dd>
         </dl>
         {!d.verified && <DealerVerifyButton dealerId={d.user_id} />}
+        <DealerEditForm
+          dealer={{
+            user_id: d.user_id,
+            business_name: d.business_name,
+            business_reg_number: d.business_reg_number,
+            contact_phone: d.contact_phone,
+            location: d.location,
+          }}
+        />
       </Card>
     </li>
   );
