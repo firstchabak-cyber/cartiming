@@ -69,3 +69,27 @@ export async function PATCH(
   }
   return NextResponse.json({ ok: true });
 }
+
+/** 관리자: 차량 완전 삭제 (연관 분석·정비·사진 등 cascade). 되돌릴 수 없음. */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
+  if (!isAdmin(user.email))
+    return NextResponse.json({ error: "권한 없음" }, { status: 403 });
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("vehicles").delete().eq("id", params.id);
+  if (error) {
+    return NextResponse.json(
+      { error: "삭제 실패", detail: error.message },
+      { status: 500 },
+    );
+  }
+  return NextResponse.json({ ok: true });
+}

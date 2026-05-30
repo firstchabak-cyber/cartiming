@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { AdminDeleteButton } from "./AdminDeleteButton";
 
 type V = {
   id: string;
@@ -68,9 +69,16 @@ export function AdminVehicleEditForm({ vehicle }: { vehicle: V }) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-        ✏️ 차량 정보 수정
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          ✏️ 차량 정보 수정
+        </Button>
+        <AdminDeleteButton
+          endpoint={`/api/admin/vehicles/${vehicle.id}`}
+          label="차량 삭제"
+          confirmWord="삭제"
+        />
+      </div>
     );
   }
 
