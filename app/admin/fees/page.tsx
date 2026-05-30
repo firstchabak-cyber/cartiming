@@ -41,6 +41,8 @@ type DealerProfile = {
   email?: string | null;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminFeesPage() {
   const admin = createAdminClient();
   const [{ data: txns }, revenue] = await Promise.all([

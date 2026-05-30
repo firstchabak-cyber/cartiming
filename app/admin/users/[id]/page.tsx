@@ -6,6 +6,8 @@ import { formatDate, formatKRW, formatMileage } from "@/lib/utils/format";
 import { GrantCreditsForm } from "@/components/admin/GrantCreditsForm";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminUserDetailPage({
   params,
 }: {

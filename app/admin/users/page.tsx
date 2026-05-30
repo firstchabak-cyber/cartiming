@@ -10,6 +10,8 @@ type UserRow = {
   created_at: string;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminUsersPage() {
   const admin = createAdminClient();
   // listUsers 전체스캔(페이지당 50명) 대신 profiles 단일 쿼리 (가입 시 트리거로 자동생성)

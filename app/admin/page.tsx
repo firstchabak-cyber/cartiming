@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/Card";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const admin = createAdminClient();
 

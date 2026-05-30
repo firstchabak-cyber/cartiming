@@ -3,6 +3,8 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminTransactionsPage() {
   const admin = createAdminClient();
   const { data: txns } = await admin
