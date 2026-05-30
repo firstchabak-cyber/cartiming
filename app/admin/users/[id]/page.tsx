@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { formatDate, formatKRW, formatMileage } from "@/lib/utils/format";
 import { GrantCreditsForm } from "@/components/admin/GrantCreditsForm";
+import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
 export default async function AdminUserDetailPage({
   params,
@@ -73,6 +74,19 @@ export default async function AdminUserDetailPage({
       </div>
 
       <GrantCreditsForm userId={user.id} />
+
+      <Card className="flex flex-col gap-2 border-danger/30">
+        <CardTitle className="text-sm text-danger">위험 구역</CardTitle>
+        <CardDescription>
+          이 고객 계정과 등록 차량·캐시·이력이 모두 영구 삭제됩니다.
+        </CardDescription>
+        <AdminDeleteButton
+          endpoint={`/api/admin/users/${user.id}`}
+          label="이 고객 계정 삭제"
+          confirmWord="삭제"
+          redirectTo="/admin/users"
+        />
+      </Card>
 
       <Card>
         <CardTitle>등록 차량 ({(vehicles ?? []).length})</CardTitle>

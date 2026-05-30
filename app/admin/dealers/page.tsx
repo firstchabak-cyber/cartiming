@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/format";
 import { DealerVerifyButton } from "@/components/admin/DealerVerifyButton";
 import { DealerEditForm } from "@/components/admin/DealerEditForm";
+import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
 type DealerRow = {
   user_id: string;
@@ -120,6 +121,11 @@ function DealerCard({ d }: { d: DealerRow }) {
             contact_phone: d.contact_phone,
             location: d.location,
           }}
+        />
+        <AdminDeleteButton
+          endpoint={`/api/admin/dealers/${d.user_id}`}
+          label="딜러 삭제"
+          confirmWord="삭제"
         />
       </Card>
     </li>
