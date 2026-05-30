@@ -24,7 +24,6 @@ export function InstallPrompt() {
     // 이미 홈화면 앱(standalone)으로 실행 중이면 숨김
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
-      // iOS Safari
       (window.navigator as unknown as { standalone?: boolean }).standalone ===
         true;
     if (standalone) return;
