@@ -37,6 +37,8 @@ const requestSchema = z.object({
 });
 
 const CACHE_TTL_HOURS = 24;
+// '다시 분석'(force) 중복 클릭 방어: 이 시간 안에 다시 누르면 직전 결과 재사용(차감 X)
+const COOLDOWN_SECONDS = 60;
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -97,11 +99,14 @@ export async function POST(request: Request) {
   const records: MaintenanceRecord[] = maintenance ?? [];
   const ctx = deriveLoanContext(vehicle as VehicleForPrompt);
 
-  // 캐시 검사: force=false이고 24h 이내 분석이 있으면 재사용 (Gemini 호출 X)
-  if (!parsed.data.force) {
-    const cutoff = new Date(
-      Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000,
-    ).toISOString();
+  // 캐시 검사:
+  //  - 일반 분석(force=false): 24시간 이내 결과 재사용 (Gemini 호출·차감 X)
+  //  - 다시 분석(force=true): 60초 이내 결과는 재사용 (중복 클릭 방어 — 1분간 여러 번 눌러도 1회로 처리)
+  {
+    const ttlMs = parsed.data.force
+      ? COOLDOWN_SECONDS * 1000
+      : CACHE_TTL_HOURS * 60 * 60 * 1000;
+    const cutoff = new Date(Date.now() - ttlMs).toISOString();
     const { data: cached } = await supabase
       .from("price_analyses")
       .select(

@@ -120,6 +120,7 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
 
   const runAnalysis = async (force = false) => {
     if (!selectedId) return;
+    if (loading) return; // 이미 분석 중이면 추가 클릭 무시 (중복 차감 방어)
     setLoading(true);
     setError(null);
     setResult(null);
