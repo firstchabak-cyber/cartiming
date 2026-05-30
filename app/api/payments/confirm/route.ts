@@ -104,14 +104,27 @@ export async function POST(request: Request) {
 
   // payment row 업데이트 + 캐시 적립 (admin 클라이언트로 처리)
   const admin = createAdminClient();
-  await admin
+  // 원자적 상태 전환 — pending → paid 가 실제로 일어난 경우(1행)만 적립한다.
+  // 동시 confirm/재시도/Strict-Mode 중복 호출 시 캐시 이중 적립 방지.
+  const { data: claimed } = await admin
     .from("payments")
     .update({
       status: "paid",
       paid_at: new Date().toISOString(),
       provider_payment_key: tossData.paymentKey ?? null,
     })
-    .eq("id", pending.id);
+    .eq("id", pending.id)
+    .eq("status", "pending")
+    .select("id");
+
+  if (!claimed || claimed.length === 0) {
+    // 다른 요청이 이미 적립을 끝냈음 — 중복 적립하지 않음
+    return NextResponse.json({
+      ok: true,
+      alreadyProcessed: true,
+      creditsGranted: pending.credits_granted,
+    });
+  }
 
   // 캐시 적립 — user_credits upsert + transaction insert
   const { data: existing } = await admin

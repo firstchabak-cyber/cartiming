@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  storage_path: z.string().min(1),
+  storage_path: z.string().min(1).max(500),
   sort_order: z.number().int().nonnegative(),
 });
 
@@ -30,6 +30,10 @@ export async function POST(
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "입력값 오류" }, { status: 400 });
+  }
+  // 본인 폴더(user_id/...) 경로만 허용 — 타인 파일 참조 방지
+  if (parsed.data.storage_path.split("/")[0] !== user.id) {
+    return NextResponse.json({ error: "잘못된 파일 경로" }, { status: 400 });
   }
 
   // 본인 매각 신청인지 확인

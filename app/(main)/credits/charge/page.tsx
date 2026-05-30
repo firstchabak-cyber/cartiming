@@ -15,6 +15,7 @@ export default function ChargePage() {
   const clientKey =
     process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ??
     "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+  const isTestKey = clientKey.startsWith("test_");
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,9 +48,11 @@ export default function ChargePage() {
 
       <p className="text-xs text-muted">
         결제는 토스페이먼츠를 통해 안전하게 처리됩니다.{" "}
-        <span className="text-warning">
-          (현재 테스트 키 사용 중 — 실제 결제 X)
-        </span>
+        {isTestKey && (
+          <span className="text-warning">
+            (현재 테스트 키 사용 중 — 실제 결제 X)
+          </span>
+        )}
       </p>
       <ChargeClient packages={CHARGE_PACKAGES} tossClientKey={clientKey} />
     </div>

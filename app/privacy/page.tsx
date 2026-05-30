@@ -127,9 +127,16 @@ export default function PrivacyPage() {
 
         <Section title="7. 개인정보 보호책임자">
           <ul className="list-none space-y-1">
-            <li>이름: 카타이밍 운영자</li>
+            <li>성명: 장문성</li>
+            <li>직책: 대표 (개인정보 보호책임자)</li>
             <li>이메일: help@cartiming.app</li>
+            <li>전화: 010-4487-4972</li>
           </ul>
+          <p className="mt-2">
+            개인정보 침해에 대한 신고·상담이 필요하신 경우 개인정보침해신고센터
+            (privacy.kisa.or.kr / 국번없이 118), 대검찰청 사이버수사과(1301),
+            경찰청 사이버수사국(182)으로 문의하실 수 있습니다.
+          </p>
         </Section>
 
         <Section title="8. 개정 이력">

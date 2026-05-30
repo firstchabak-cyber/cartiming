@@ -49,6 +49,13 @@ export async function POST(request: Request) {
       { status: 404 },
     );
   }
+  // 이미 매각 처리된 차량은 중복 기록 불가 (시세 DB 오염 방지)
+  if (vehicle.status !== "active") {
+    return NextResponse.json(
+      { error: "이미 매각 처리된 차량입니다" },
+      { status: 400 },
+    );
+  }
 
   // 차량 스냅샷 데이터 준비
   const damageMap =
