@@ -67,10 +67,21 @@ export default function ProfilePage() {
     }
   };
 
+  const [loggingOut, setLoggingOut] = useState(false);
   const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.replace("/login");
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      // 세션 정리 실패해도 로그인 화면으로는 보낸다
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch {
+      // 무시
+    }
+    // 확실하게 이동 (router 가 막혀도 강제 이동)
+    window.location.href = "/login";
   };
 
   return (
@@ -133,10 +144,6 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      {profile?.id && (
-        <ReferralCard link={`${APP_URL}/r/${profile.id}`} />
-      )}
-
       <NotificationSettings />
 
       {profile?.id && <ReferralCard link={`${APP_URL}/r/${profile.id}`} />}
@@ -157,9 +164,14 @@ export default function ProfilePage() {
         </Link>
       )}
 
-      <Button variant="outline" fullWidth onClick={logout}>
+      <Button
+        variant="outline"
+        fullWidth
+        onClick={logout}
+        disabled={loggingOut}
+      >
         <LogOut className="h-4 w-4" />
-        로그아웃
+        {loggingOut ? "로그아웃 중..." : "로그아웃"}
       </Button>
     </div>
   );
