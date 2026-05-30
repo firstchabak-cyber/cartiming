@@ -1,67 +1,143 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Mail } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { PushSubscribeButton } from "./PushSubscribeButton";
+
+const ENABLE_COST = 500;
 
 export function NotificationSettings() {
+  // 서버에 저장된 현재 수신 여부
   const [emailOn, setEmailOn] = useState<boolean | null>(null);
+  // 체크박스(저장 전 의도)
+  const [checked, setChecked] = useState(false);
+  // 이미 활성화 비용을 낸 적 있는지
+  const [alreadyPaid, setAlreadyPaid] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [charged, setCharged] = useState(0);
+  const [needCredit, setNeedCredit] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/notifications/email-pref")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d) setEmailOn(d.enabled !== false);
+        if (d) {
+          const on = d.enabled !== false;
+          setEmailOn(on);
+          setChecked(on);
+          if (d.alreadyPaid) setAlreadyPaid(true);
+        }
       })
-      .catch(() => setEmailOn(true));
+      .catch(() => {
+        setEmailOn(false);
+        setChecked(false);
+      });
   }, []);
 
-  const toggleEmail = async () => {
+  const save = async () => {
     if (emailOn === null) return;
-    const next = !emailOn;
-    setEmailOn(next);
+    setNeedCredit(false);
+    setErr(null);
+    setCharged(0);
+
+    // 켜기인데 아직 비용 안 냈으면 확인
+    if (checked && !emailOn && !alreadyPaid) {
+      const ok = window.confirm(
+        `이메일 알림을 켜면 ${ENABLE_COST}캐시가 1회 차감됩니다.\n(한 번만 차감되고, 이후 끄고 켜도 추가 차감은 없어요)\n\n계속할까요?`,
+      );
+      if (!ok) return;
+    }
+
     setBusy(true);
     try {
-      await fetch("/api/notifications/email-pref", {
+      const res = await fetch("/api/notifications/email-pref", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: next }),
+        body: JSON.stringify({ enabled: checked }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setEmailOn(checked);
+        if (data?.charged > 0) {
+          setCharged(data.charged);
+          setAlreadyPaid(true);
+        } else if (checked) {
+          setAlreadyPaid(true);
+        }
+      } else if (res.status === 402) {
+        setNeedCredit(true);
+        setChecked(false);
+      } else {
+        setErr(data?.error ?? "저장에 실패했습니다");
+      }
     } catch {
-      setEmailOn(!next); // 롤백
+      setErr("네트워크 오류로 저장에 실패했습니다");
     } finally {
       setBusy(false);
     }
   };
 
+  const dirty = emailOn !== null && checked !== emailOn;
+
   return (
     <Card className="flex flex-col gap-3">
       <CardTitle className="text-sm">알림 설정</CardTitle>
 
-      <div className="flex flex-col gap-1">
-        <PushSubscribeButton />
-        <p className="text-[11px] text-muted">
-          📱 휴대폰 홈 화면에 앱을 추가하면 알림이 더 안정적으로 도착해요.
-          (아이폰은 홈 화면 추가 후에만 푸시가 작동합니다)
-        </p>
-      </div>
-
-      <label className="flex items-center justify-between border-t border-border pt-3">
-        <div>
-          <p className="text-sm font-medium text-foreground">이메일 알림</p>
-          <p className="text-[11px] text-muted">
-            중요 알림을 가입 이메일로도 받아요
-          </p>
-        </div>
+      <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
         <input
           type="checkbox"
-          checked={emailOn ?? true}
-          onChange={toggleEmail}
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
           disabled={busy || emailOn === null}
-          className="h-5 w-9 cursor-pointer accent-primary"
+          className="mt-0.5 h-4 w-4 accent-primary"
         />
+        <span className="flex items-center gap-1.5 text-sm text-foreground">
+          <Mail className="h-4 w-4 text-primary" />
+          매각 적기·시세 변동 이메일 알림 받기
+          {!alreadyPaid && (
+            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+              최초 {ENABLE_COST}캐시
+            </span>
+          )}
+        </span>
       </label>
+      <p className="text-[11px] text-muted">
+        매각 적기·시세 변동 같은 중요 알림을 가입하신 이메일로 보내드려요.
+      </p>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={busy || !dirty}
+        className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+      >
+        {busy
+          ? "처리 중..."
+          : !dirty && emailOn
+            ? "알림 켜짐 ✓"
+            : "저장하기"}
+      </button>
+
+      {charged > 0 && (
+        <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted">
+          ✅ 이메일 알림이 켜졌어요. {charged.toLocaleString("ko-KR")}캐시가
+          차감되었습니다. (이후 추가 차감 없음)
+        </p>
+      )}
+      {needCredit && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          캐시가 부족해요. 알림을 켜려면 {ENABLE_COST}캐시가 필요합니다.{" "}
+          <a href="/credits/charge" className="font-semibold underline">
+            충전하기 →
+          </a>
+        </p>
+      )}
+      {err && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          ⚠️ {err}
+        </p>
+      )}
     </Card>
   );
 }

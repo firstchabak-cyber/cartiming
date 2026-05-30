@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sendPushToUser } from "@/lib/push/server";
 import { sendEmail, notificationEmailHtml } from "@/lib/email/send";
 import { APP_URL } from "@/lib/constants/app";
 
@@ -16,9 +15,10 @@ export type DispatchArgs = {
 };
 
 /**
- * 알림 1건을 생성하고 인앱 + 푸시 + (선택)이메일로 전파.
+ * 알림 1건을 생성하고 인앱 + (선택)이메일로 전파.
  * admin = service-role Supabase 클라이언트.
- * 푸시/이메일 실패는 무시(인앱 알림은 항상 기록됨).
+ * 이메일 실패는 무시(인앱 알림은 항상 기록됨).
+ * (휴대폰 푸시는 정식 앱 출시 후 도입 예정 — 현재 미사용)
  */
 export async function createAndDispatch(
   admin: SupabaseClient,
@@ -37,15 +37,7 @@ export async function createAndDispatch(
     ? `${APP_URL}/analysis?vehicleId=${args.vehicleId}`
     : `${APP_URL}/notifications`;
 
-  // 2) 웹 푸시
-  await sendPushToUser(args.userId, {
-    title: args.title,
-    body: args.message,
-    url,
-    tag: args.type,
-  });
-
-  // 3) 이메일 (요청 시 + 수신 동의 + 주소 있음)
+  // 2) 이메일 (요청 시 + 수신 동의(명시적 ON) + 주소 있음)
   if (args.email) {
     try {
       const [{ data: pref }, { data: profile }] = await Promise.all([
@@ -60,7 +52,7 @@ export async function createAndDispatch(
           .eq("id", args.userId)
           .maybeSingle(),
       ]);
-      const optedIn = pref?.email_notifications !== false; // 기본 ON
+      const optedIn = pref?.email_notifications === true; // 명시적으로 켠 경우만
       const to = profile?.email as string | undefined;
       if (optedIn && to) {
         await sendEmail({
