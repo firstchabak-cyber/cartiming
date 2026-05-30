@@ -2,10 +2,43 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { NOTIFICATION_ENABLE_COST } from "@/lib/credits/constants";
+import { sendEmail, notificationEmailHtml } from "@/lib/email/send";
+import { APP_URL } from "@/lib/constants/app";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({ enabled: z.boolean() });
+
+/** 알림 켜기 성공 시 환영(확인) 메일 1통 발송 — 실패해도 무시 */
+async function sendWelcomeEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+) {
+  try {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email")
+      .eq("id", userId)
+      .maybeSingle();
+    const to = profile?.email as string | undefined;
+    if (!to) return;
+    const title = "이메일 알림이 켜졌어요 🔔";
+    const message =
+      "이제 매각 적기·시세 변동 같은 중요한 소식을 이 이메일로 보내드려요.\n내 차의 가장 좋은 매각 타이밍을 놓치지 마세요!";
+    await sendEmail({
+      to,
+      subject: `[카타이밍] ${title}`,
+      html: notificationEmailHtml({
+        title,
+        message,
+        ctaUrl: `${APP_URL}/dashboard`,
+      }),
+      text: `${title}\n\n${message}\n\n${APP_URL}/dashboard`,
+    });
+  } catch {
+    // 무시
+  }
+}
 
 /** 현재 이메일 알림 수신 여부 + 활성화 비용 기납부 여부 조회 */
 export async function GET() {
@@ -104,6 +137,7 @@ export async function POST(request: Request) {
       balance_after: newBalance,
       description: "이메일 알림 활성화",
     });
+    await sendWelcomeEmail(admin, user.id);
     return NextResponse.json({ ok: true, charged: NOTIFICATION_ENABLE_COST });
   }
 
@@ -112,5 +146,6 @@ export async function POST(request: Request) {
     .from("user_credits")
     .update({ email_notifications: true })
     .eq("user_id", user.id);
+  await sendWelcomeEmail(admin, user.id);
   return NextResponse.json({ ok: true, charged: 0 });
 }
