@@ -8,6 +8,7 @@ import { AdminBidForm } from "@/components/admin/AdminBidForm";
 import { SalePhotoGallery } from "@/components/sale/SalePhotoGallery";
 import { ApproveSaleButton } from "@/components/admin/ApproveSaleButton";
 import { RequestInfoButton } from "@/components/admin/RequestInfoButton";
+import { RejectSaleButton } from "@/components/admin/RejectSaleButton";
 
 const STATUS_META: Record<
   string,
@@ -387,11 +388,15 @@ export default async function AdminSaleDetailPage({
           <RequestInfoButton
             endpoint={`/api/admin/sales/${sale.id}/request-info`}
           />
+          <RejectSaleButton saleRequestId={sale.id} />
         </div>
       )}
 
       {sale.status === "bidding" && (
-        <AdminBidForm saleRequestId={sale.id} />
+        <div className="flex flex-col gap-3">
+          <AdminBidForm saleRequestId={sale.id} />
+          <RejectSaleButton saleRequestId={sale.id} />
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin/check";
+import { createAndDispatch } from "@/lib/notify/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,19 @@ export async function POST(request: Request) {
     balance_after: next,
     description: parsed.data.reason,
   });
+
+  // 캐시가 지급된 경우(양수) 고객에게 알림 — 마케팅/보상 효과를 위해
+  if (parsed.data.amount > 0) {
+    await createAndDispatch(admin, {
+      userId: parsed.data.userId,
+      type: "system",
+      title: `🎁 캐시 ${parsed.data.amount.toLocaleString("ko-KR")} 지급`,
+      message:
+        `운영자가 캐시 ${parsed.data.amount.toLocaleString("ko-KR")}을 지급했어요.\n` +
+        `사유: ${parsed.data.reason}\n현재 잔액: ${next.toLocaleString("ko-KR")} 캐시`,
+      email: true,
+    });
+  }
 
   return NextResponse.json({ ok: true, newBalance: next });
 }

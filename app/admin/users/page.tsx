@@ -12,14 +12,25 @@ type UserRow = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
   const admin = createAdminClient();
+  const q = (searchParams.q ?? "").trim();
   // listUsers 전체스캔(페이지당 50명) 대신 profiles 단일 쿼리 (가입 시 트리거로 자동생성)
-  const { data: profilesData } = await admin
+  let profilesQuery = admin
     .from("profiles")
     .select("id, email, name, created_at")
     .order("created_at", { ascending: false })
     .limit(1000);
+  if (q) {
+    // 이메일 또는 이름 부분 일치 검색
+    const safe = q.replace(/[%,]/g, "");
+    profilesQuery = profilesQuery.or(`email.ilike.%${safe}%,name.ilike.%${safe}%`);
+  }
+  const { data: profilesData } = await profilesQuery;
   const users: UserRow[] = (profilesData ?? []).map(
     (p: { id: string; email: string | null; name: string | null; created_at: string }) => ({
       id: p.id,
@@ -62,8 +73,34 @@ export default async function AdminUsersPage() {
     <div className="flex flex-col gap-4">
       <header>
         <h1 className="text-2xl font-bold text-foreground">고객 관리</h1>
-        <p className="text-sm text-muted">전체 {users.length}명</p>
+        <p className="text-sm text-muted">
+          {q ? `"${q}" 검색 결과 ${users.length}명` : `전체 ${users.length}명`}
+        </p>
       </header>
+
+      <form method="get" className="flex gap-2">
+        <input
+          type="text"
+          name="q"
+          defaultValue={q}
+          placeholder="이메일 또는 이름으로 검색"
+          className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white"
+        >
+          검색
+        </button>
+        {q && (
+          <Link
+            href="/admin/users"
+            className="flex h-10 items-center rounded-lg border border-border px-4 text-sm text-muted hover:bg-surface"
+          >
+            초기화
+          </Link>
+        )}
+      </form>
 
       {users.length === 0 ? (
         <Card className="py-10 text-center">

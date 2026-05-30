@@ -3,6 +3,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/format";
 import { DealerVerifyButton } from "@/components/admin/DealerVerifyButton";
+import { DealerSuspendButton } from "@/components/admin/DealerSuspendButton";
 import { DealerEditForm } from "@/components/admin/DealerEditForm";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
@@ -112,7 +113,11 @@ function DealerCard({ d }: { d: DealerRow }) {
           <dt className="text-muted">신청일</dt>
           <dd>{formatDate(d.created_at)}</dd>
         </dl>
-        {!d.verified && <DealerVerifyButton dealerId={d.user_id} />}
+        {d.verified ? (
+          <DealerSuspendButton dealerId={d.user_id} />
+        ) : (
+          <DealerVerifyButton dealerId={d.user_id} />
+        )}
         <DealerEditForm
           dealer={{
             user_id: d.user_id,

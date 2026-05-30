@@ -13,6 +13,7 @@ import {
   Activity,
   Search,
   Trash2,
+  Megaphone,
 } from "lucide-react";
 
 const ITEMS = [
@@ -23,6 +24,7 @@ const ITEMS = [
   { href: "/admin/fees", label: "정산·매출", icon: Wallet },
   { href: "/admin/dealers", label: "딜러 관리", icon: Store },
   { href: "/admin/users", label: "고객 관리", icon: Users },
+  { href: "/admin/announcements", label: "공지 발송", icon: Megaphone },
   { href: "/admin/transactions", label: "실거래 데이터", icon: Database },
   { href: "/admin/deletion-log", label: "삭제 이력", icon: Trash2 },
 ];

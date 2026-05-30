@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin/check";
 import { logDeletion } from "@/lib/admin/deletion-log";
+import { createAndDispatch } from "@/lib/notify/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ const schema = z
     business_reg_number: z.string().trim().min(1).optional(),
     contact_phone: z.string().trim().min(1).optional(),
     location: z.string().trim().nullable().optional(),
+    /** 인증 상태 토글 (정지 = false, 재승인 = true) */
+    verified: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "수정할 항목이 없습니다" });
 
@@ -43,13 +46,33 @@ export async function PATCH(
   }
 
   const admin = createAdminClient();
+  const update: Record<string, unknown> = { ...parsed.data };
+  // 인증 상태가 바뀌면 verified_at 도 함께 갱신
+  if (parsed.data.verified === true) {
+    update.verified_at = new Date().toISOString();
+  } else if (parsed.data.verified === false) {
+    update.verified_at = null;
+  }
   const { error } = await admin
     .from("dealers")
-    .update(parsed.data)
+    .update(update)
     .eq("user_id", params.id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // 정지된 경우 딜러에게 알림 (재승인 알림은 verify-dealer 가 담당)
+  if (parsed.data.verified === false) {
+    await createAndDispatch(admin, {
+      userId: params.id,
+      type: "system",
+      title: "⚠️ 딜러 인증이 일시 정지됐어요",
+      message:
+        "운영자에 의해 딜러 인증이 일시 정지되어 현재 입찰이 제한됩니다.\n문의사항은 고객센터로 연락해 주세요.",
+      email: true,
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }
 
