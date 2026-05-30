@@ -76,7 +76,6 @@ export function AdminVehicleEditForm({ vehicle }: { vehicle: V }) {
         <AdminDeleteButton
           endpoint={`/api/admin/vehicles/${vehicle.id}`}
           label="차량 삭제"
-          confirmWord="삭제"
         />
       </div>
     );

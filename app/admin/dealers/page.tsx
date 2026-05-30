@@ -125,7 +125,6 @@ function DealerCard({ d }: { d: DealerRow }) {
         <AdminDeleteButton
           endpoint={`/api/admin/dealers/${d.user_id}`}
           label="딜러 삭제"
-          confirmWord="삭제"
         />
       </Card>
     </li>

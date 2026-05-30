@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin/check";
+import { logDeletion } from "@/lib/admin/deletion-log";
 
 export const dynamic = "force-dynamic";
 
@@ -70,9 +71,11 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
-/** 관리자: 차량 완전 삭제 (연관 분석·정비·사진 등 cascade). 되돌릴 수 없음. */
+const deleteSchema = z.object({ reason: z.string().trim().min(1).max(500) });
+
+/** 관리자: 차량 완전 삭제 (사유 필수. 연관 분석·정비·사진 cascade). */
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } },
 ) {
   const supabase = createClient();
@@ -83,7 +86,34 @@ export async function DELETE(
   if (!isAdmin(user.email))
     return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
+  let body: unknown = {};
+  try {
+    body = await request.json();
+  } catch {}
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "삭제 사유를 입력해주세요" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
+  const { data: vehicle } = await admin
+    .from("vehicles")
+    .select("manufacturer, model, plate_number")
+    .eq("id", params.id)
+    .maybeSingle();
+  const label = vehicle
+    ? `${vehicle.manufacturer} ${vehicle.model}${vehicle.plate_number ? ` (${vehicle.plate_number})` : ""}`
+    : params.id;
+
+  await logDeletion(admin, {
+    adminId: user.id,
+    adminEmail: user.email ?? null,
+    targetType: "vehicle",
+    targetId: params.id,
+    targetLabel: label,
+    reason: parsed.data.reason,
+  });
+
   const { error } = await admin.from("vehicles").delete().eq("id", params.id);
   if (error) {
     return NextResponse.json(

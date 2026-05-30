@@ -4,32 +4,38 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * 관리자 삭제 버튼. 확인 문구를 정확히 입력해야 실제 삭제 (오삭제 방지).
- * endpoint: DELETE 호출할 주소
+ * 관리자 삭제 버튼. 삭제 사유를 입력해야 실행되며, 사유는 삭제 로그에 영구 기록됨.
+ * endpoint: DELETE 호출할 주소 (body 로 { reason } 전송)
  * redirectTo: 삭제 후 이동할 경로 (없으면 router.refresh)
  */
 export function AdminDeleteButton({
   endpoint,
   label,
-  confirmWord,
   redirectTo,
 }: {
   endpoint: string;
   label: string;
-  confirmWord: string;
   redirectTo?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const remove = async () => {
+    if (!reason.trim()) {
+      setErr("삭제 사유를 입력해주세요");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch(endpoint, { method: "DELETE" });
+      const res = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setErr(data?.error ?? "삭제 실패");
@@ -66,28 +72,31 @@ export function AdminDeleteButton({
         ⚠️ {label} — 되돌릴 수 없어요!
       </p>
       <p className="text-[11px] text-muted">
-        삭제하려면 아래에 <b>{confirmWord}</b> 를 입력하세요.
+        삭제 사유를 입력하면 기록으로 남아요 (나중에 왜 삭제했는지 확인 가능).
       </p>
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder={confirmWord}
-        className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm focus:border-danger focus:outline-none"
+      <textarea
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        rows={2}
+        maxLength={500}
+        placeholder="예) 중복 가입 계정 / 테스트 데이터 / 고객 요청으로 탈퇴"
+        className="w-full rounded-lg border border-border bg-background p-2 text-sm focus:border-danger focus:outline-none"
       />
       <div className="flex gap-2">
         <button
           type="button"
           onClick={remove}
-          disabled={busy || input.trim() !== confirmWord}
+          disabled={busy || !reason.trim()}
           className="flex-1 rounded-lg bg-danger px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-40"
         >
-          {busy ? "삭제 중..." : "영구 삭제"}
+          {busy ? "삭제 중..." : "사유 기록하고 삭제"}
         </button>
         <button
           type="button"
           onClick={() => {
             setOpen(false);
-            setInput("");
+            setReason("");
+            setErr(null);
           }}
           disabled={busy}
           className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-surface"

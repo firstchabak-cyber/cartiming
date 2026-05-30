@@ -83,7 +83,6 @@ export default async function AdminUserDetailPage({
         <AdminDeleteButton
           endpoint={`/api/admin/users/${user.id}`}
           label="이 고객 계정 삭제"
-          confirmWord="삭제"
           redirectTo="/admin/users"
         />
       </Card>
