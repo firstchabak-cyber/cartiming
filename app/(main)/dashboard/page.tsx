@@ -17,26 +17,26 @@ export default async function DashboardPage() {
   const greetingName =
     user?.user_metadata?.name ?? user?.email?.split("@")[0] ?? "고객";
 
-  const { data: vehicles } = user
-    ? await supabase
-        .from("vehicles")
-        .select("id, manufacturer, model, trim, year, mileage, plate_number")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(3)
-    : { data: null };
+  // 차량 목록과 딜러 여부는 서로 무관하므로 동시에 조회 (순차 대기 제거로 로딩 단축)
+  const [{ data: vehicles }, { data: dealer }] = user
+    ? await Promise.all([
+        supabase
+          .from("vehicles")
+          .select("id, manufacturer, model, trim, year, mileage, plate_number")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(3),
+        // 딜러로 등록된 사용자에게는 딜러 센터 바로가기를 노출 (하단 네비에는 딜러 진입점이 없으므로)
+        supabase
+          .from("dealers")
+          .select("verified")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ])
+    : [{ data: null }, { data: null }];
 
   const hasVehicles = (vehicles?.length ?? 0) > 0;
-
-  // 딜러로 등록된 사용자에게는 딜러 센터 바로가기를 노출 (하단 네비에는 딜러 진입점이 없으므로)
-  const { data: dealer } = user
-    ? await supabase
-        .from("dealers")
-        .select("verified")
-        .eq("user_id", user.id)
-        .maybeSingle()
-    : { data: null };
 
   return (
     <div className="flex flex-col gap-5">

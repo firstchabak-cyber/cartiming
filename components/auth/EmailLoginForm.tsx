@@ -96,7 +96,13 @@ export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
       {errorMsg && <p className="text-sm text-danger">{errorMsg}</p>}
       {infoMsg && <p className="text-sm text-success">{infoMsg}</p>}
       <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-        {mode === "login" ? "로그인" : "이메일로 가입하기"}
+        {isSubmitting
+          ? mode === "login"
+            ? "로그인 중…"
+            : "가입 중…"
+          : mode === "login"
+            ? "로그인"
+            : "이메일로 가입하기"}
       </Button>
     </form>
   );
