@@ -50,6 +50,23 @@ export async function GET(request: Request) {
     }
 
     const password = derivePassword(profile.id);
+
+    // 빠른 경로: 이미 가입돼 있고 비밀번호(네이버 id 기반, 항상 동일)가 맞으면
+    // 곧바로 세션을 만들고 끝낸다. 재로그인 대부분이 여기서 처리되어
+    // Supabase 관리자 왕복(후보 조회·getUserById·정보 갱신)을 모두 건너뛴다.
+    const supabase = createClient();
+    const { error: fastSignInError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password,
+    });
+    if (!fastSignInError) {
+      const redirectRes = NextResponse.redirect(`${origin}${safeNext}`);
+      redirectRes.cookies.delete("naver_oauth_next");
+      return redirectRes;
+    }
+
+    // 느린 경로: 신규 가입 / 이메일가입 계정과 이메일 충돌 / 비밀번호 불일치 /
+    // 소프트삭제 계정 등. 사용자를 조회·정리·생성/갱신한 뒤 다시 로그인한다.
     const admin = createAdminClient();
 
     // 이메일로 후보 사용자 id 조회 — 전체 listUsers 스캔 대신 profiles 테이블 사용
@@ -151,7 +168,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const supabase = createClient();
+    // 느린 경로에서 사용자 생성/갱신을 마친 뒤 다시 로그인 (위 supabase 클라이언트 재사용)
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: profile.email,
       password,
