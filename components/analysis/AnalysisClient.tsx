@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Share2 } from "lucide-react";
+import { History, Share2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -335,6 +336,13 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                   ? "🔄 최신 분석 요청 (Gemini 재호출)"
                   : "🔄 다시 분석 (Gemini 재호출)"}
             </button>
+            <Link
+              href={`/vehicles/${selectedId}`}
+              className="flex items-center gap-1 self-start text-xs font-medium text-muted hover:text-foreground hover:underline"
+            >
+              <History className="h-3.5 w-3.5" />
+              이 차량 시세 분석 기록 전체 보기
+            </Link>
             {result.loan && (
               <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-3 text-sm">
                 <div className="flex justify-between">

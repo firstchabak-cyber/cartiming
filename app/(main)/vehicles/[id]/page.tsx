@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LineChart, Pencil, Plus, Wrench, Wallet } from "lucide-react";
+import { History, LineChart, Pencil, Plus, Wrench, Wallet } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -83,26 +83,19 @@ export default async function VehicleDetailPage({
   const monthly = loan ? Math.round(monthlyPayment(loan)) : null;
   const remainingMonths = loan ? Math.max(0, loan.months - elapsed) : null;
 
-  const { data: latestAnalysisRaw } = await supabase
+  const { data: analysisRows } = await supabase
     .from("price_analyses")
-    .select(
-      "current_price, predicted_6m, signal, rationale, generated_at",
-    )
+    .select("current_price, predicted_6m, signal, rationale, generated_at")
     .eq("vehicle_id", vehicle.id)
     .eq("user_id", user.id)
-    .order("generated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("generated_at", { ascending: false });
 
-  const latestAnalysis = latestAnalysisRaw
-    ? {
-        ...latestAnalysisRaw,
-        signal: latestAnalysisRaw.signal as
-          | "sell_now"
-          | "review"
-          | "hold",
-      }
-    : null;
+  const analyses = (analysisRows ?? []).map((a) => ({
+    ...a,
+    signal: a.signal as "sell_now" | "review" | "hold",
+  }));
+
+  const latestAnalysis = analyses[0] ?? null;
 
   const { data: maintenanceRaw } = await supabase
     .from("vehicle_maintenance")
@@ -402,6 +395,61 @@ export default async function VehicleDetailPage({
               AI 시세 분석 보기
             </Button>
           </Link>
+        </Card>
+      )}
+
+      {analyses.length >= 2 && (
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">
+              시세 분석 기록 ({analyses.length}회)
+            </CardTitle>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {analyses.map((a, i) => {
+              const older = analyses[i + 1];
+              const diff = older ? a.current_price - older.current_price : 0;
+              const pct =
+                older && older.current_price > 0
+                  ? Math.round((Math.abs(diff) / older.current_price) * 1000) / 10
+                  : 0;
+              return (
+                <li
+                  key={a.generated_at}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatKRW(a.current_price)}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {formatDate(a.generated_at)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {older && diff !== 0 && (
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          diff > 0 ? "text-success" : "text-danger",
+                        )}
+                      >
+                        {diff > 0 ? "▲" : "▼"} {pct}%
+                      </span>
+                    )}
+                    <Badge tone={SIGNAL_META[a.signal].tone}>
+                      {SIGNAL_META[a.signal].label}
+                    </Badge>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-[11px] text-muted">
+            매월 1일 자동 분석 + 직접 분석할 때마다 기록이 쌓입니다. 변동률은 직전
+            기록 대비입니다.
+          </p>
         </Card>
       )}
 
