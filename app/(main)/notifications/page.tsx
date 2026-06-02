@@ -51,7 +51,8 @@ export default async function NotificationsPage() {
           <BellOff className="h-10 w-10 text-muted" />
           <CardTitle>알림이 없습니다</CardTitle>
           <CardDescription>
-            차량 시세 분석을 실행하면 매각 적기 알림이 도착해요.
+            차량을 등록해두면 매월 자동 시세 분석으로 매각 적기·시세 변동 알림을
+            보내드려요. 직접 분석하면 즉시 최신 알림을 받을 수 있어요.
           </CardDescription>
         </Card>
       ) : (
