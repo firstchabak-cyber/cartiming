@@ -10,6 +10,7 @@ import {
   type MaintenanceRecord,
   type VehicleForPrompt,
 } from "@/lib/analysis/prompt";
+import { createAndDispatch } from "@/lib/notify/dispatch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -134,16 +135,18 @@ async function analyzeOne(
     }
   }
 
-  if (notifications.length > 0) {
-    await admin.from("notifications").insert(
-      notifications.map((n) => ({
-        user_id: vehicle.user_id,
-        vehicle_id: vehicle.id,
-        type: n.type,
-        title: n.title,
-        message: n.message,
-      })),
-    );
+  // 인앱 알림 + 이메일(수신 동의한 사용자에게만) 발송.
+  // createAndDispatch 가 인앱 insert 와 이메일을 함께 처리한다.
+  // (자동 분석 알림 — 매각적기/시세변동 — 은 모두 중요하므로 email: true)
+  for (const n of notifications) {
+    await createAndDispatch(admin, {
+      userId: vehicle.user_id,
+      vehicleId: vehicle.id,
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      email: true,
+    });
   }
 
   return { status: "ok" };
