@@ -9,6 +9,9 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 const DISMISS_KEY = "cartiming_install_dismissed";
+const VISIT_KEY = "cartiming_visit_days";
+// 첫 방문(첫 로그인)엔 설치를 권하지 않고, 다른 날 다시 찾아온 재방문자에게만 노출
+const MIN_VISIT_DAYS = 2;
 
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
@@ -30,6 +33,25 @@ export function InstallPrompt() {
 
     // 사용자가 닫은 적 있으면 숨김
     if (localStorage.getItem(DISMISS_KEY) === "1") return;
+
+    // 조용한 유도: 방문한 "서로 다른 날" 수를 세어, 재방문자에게만 배너 노출.
+    // (첫 로그인 경험을 방해하지 않기 위함. 하루에 여러 번 들어와도 1회만 카운트)
+    let visitDays = 0;
+    try {
+      const raw = localStorage.getItem(VISIT_KEY);
+      const parsed = raw ? JSON.parse(raw) : { days: 0, last: "" };
+      const today = new Date().toISOString().slice(0, 10);
+      if (parsed.last !== today) {
+        parsed.days = (parsed.days ?? 0) + 1;
+        parsed.last = today;
+        localStorage.setItem(VISIT_KEY, JSON.stringify(parsed));
+      }
+      visitDays = parsed.days ?? 0;
+    } catch {
+      // localStorage 사용 불가 시 조용히 미노출
+      return;
+    }
+    if (visitDays < MIN_VISIT_DAYS) return;
 
     const ua = window.navigator.userAgent;
     const ios = /iPhone|iPad|iPod/i.test(ua);
