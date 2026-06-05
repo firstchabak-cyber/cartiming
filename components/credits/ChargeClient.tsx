@@ -142,7 +142,7 @@ export function ChargeClient({ packages, tossClientKey }: Props) {
         <p className="font-semibold text-foreground">결제 전 안내</p>
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
           <li>
-            캐시는 카타이밍 서비스 내 이용권으로,{" "}
+            캐시는 카타임 서비스 내 이용권으로,{" "}
             <span className="font-medium text-foreground">
               현금 인출·이체·환불·타인 양도가 불가
             </span>
@@ -156,7 +156,7 @@ export function ChargeClient({ packages, tossClientKey }: Props) {
       </div>
 
       <p className="text-[11px] text-muted">
-        결제 진행 시 카타이밍의{" "}
+        결제 진행 시 카타임의{" "}
         <a href="/terms" className="text-primary underline" target="_blank">
           이용약관
         </a>{" "}

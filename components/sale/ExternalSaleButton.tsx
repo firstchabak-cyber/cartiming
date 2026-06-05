@@ -84,7 +84,7 @@ export function ExternalSaleButton({ vehicleId }: { vehicleId: string }) {
             <p className="text-xs text-muted">
               헤이딜러·엔카·직거래 등 다른 곳에서 매각한 경우 가격을 신고해 주세요.
               <br />• 차량은 자동으로 매각 상태로 전환됩니다.
-              <br />• <strong>3개월 무료 슬롯</strong> 회복 (영구 슬롯은 X — 영구는 카타이밍 매각만)
+              <br />• <strong>3개월 무료 슬롯</strong> 회복 (영구 슬롯은 X — 영구는 카타임 매각만)
               <br />• 익명화되어 다른 사용자의 시세 분석 정확도 향상에 기여됩니다.
             </p>
 

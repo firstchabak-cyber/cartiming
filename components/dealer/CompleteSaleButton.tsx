@@ -49,7 +49,7 @@ export function CompleteSaleButton({
           : " 입찰가 그대로 거래가 기록됩니다."}
       </p>
       <ul className="list-disc space-y-0.5 pl-5 text-[11px] text-muted">
-        <li>처리 시 카타이밍 시세 DB 에 실거래가 누적</li>
+        <li>처리 시 카타임 시세 DB 에 실거래가 누적</li>
         <li>차주에게 거래 완료 알림 + 후기 작성 요청 발송</li>
         <li>수수료 청구 대상으로 자동 등록 (1,000만원 미만 15만원 / 이상 1.5%)</li>
         <li>차주의 영구 무료 차량 슬롯 +1 적립</li>

@@ -1,4 +1,4 @@
-export const APP_NAME = "카타이밍";
+export const APP_NAME = "카타임";
 export const APP_TAGLINE = "내 차의 매각 적기를 알려드립니다";
 export const APP_DESCRIPTION =
   "AI가 분석하는 내 차의 현재·미래 시세와 매각 적기 알림 서비스";

@@ -181,7 +181,7 @@ export async function completeSale(args: {
     type: "admin_grant",
     amount: 0,
     balance_after: 0,
-    description: "카타이밍 매각 완료 — 영구 무료 차량 슬롯 +1",
+    description: "카타임 매각 완료 — 영구 무료 차량 슬롯 +1",
     ref_id: sale.id,
   });
 

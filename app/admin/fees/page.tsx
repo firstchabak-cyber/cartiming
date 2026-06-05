@@ -286,7 +286,7 @@ export default async function AdminFeesPage() {
             🧾 매각 수수료 정산
           </h2>
           <p className="text-xs text-muted">
-            카타이밍 통한 매각 완료 건의 딜러 수수료 추적 (1,000만원 미만 15만원
+            카타임 통한 매각 완료 건의 딜러 수수료 추적 (1,000만원 미만 15만원
             / 이상 1.5%)
           </p>
         </div>
@@ -323,7 +323,7 @@ export default async function AdminFeesPage() {
       {list.length === 0 ? (
         <Card className="py-10 text-center">
           <CardDescription>
-            아직 정산 대상 거래가 없습니다. 카타이밍 매각 완료 시 자동 등록됩니다.
+            아직 정산 대상 거래가 없습니다. 카타임 매각 완료 시 자동 등록됩니다.
           </CardDescription>
         </Card>
       ) : (

@@ -44,7 +44,7 @@ export function RevenueCsvButton({ monthly }: { monthly: MonthlyRevenue[] }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `카타이밍_월별매출.csv`;
+    a.download = `카타임_월별매출.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

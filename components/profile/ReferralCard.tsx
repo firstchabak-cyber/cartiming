@@ -13,7 +13,7 @@ export function ReferralCard({ link }: { link: string }) {
   const [copied, setCopied] = useState(false);
 
   const shareText =
-    `🚗 내 차 시세, AI가 분석해주는 카타이밍\n` +
+    `🚗 내 차 시세, AI가 분석해주는 카타임\n` +
     `이 링크로 가입하고 무료 시세 분석 받아보세요!\n${link}`;
 
   const onShare = async () => {
@@ -23,7 +23,7 @@ export function ReferralCard({ link }: { link: string }) {
       /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
     if (canShare) {
       try {
-        await navigator.share({ title: "카타이밍 초대", text: shareText });
+        await navigator.share({ title: "카타임 초대", text: shareText });
         return;
       } catch {
         return;

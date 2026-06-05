@@ -27,7 +27,7 @@ function DealerLoginPageInner() {
         </p>
         <h1 className="mt-2 text-2xl font-bold text-foreground">딜러 로그인</h1>
         <p className="mt-2 text-sm text-muted">
-          카타이밍 딜러 페이지에 로그인하세요
+          카타임 딜러 페이지에 로그인하세요
         </p>
       </header>
 

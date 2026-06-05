@@ -57,7 +57,7 @@ export async function createAndDispatch(
       if (optedIn && to) {
         await sendEmail({
           to,
-          subject: `[카타이밍] ${args.title}`,
+          subject: `[카타임] ${args.title}`,
           html: notificationEmailHtml({
             title: args.title,
             message: args.message,
@@ -135,7 +135,7 @@ export async function createAndDispatchMany(
         targets.map((to) =>
           sendEmail({
             to,
-            subject: `[카타이밍] ${args.title}`,
+            subject: `[카타임] ${args.title}`,
             html: notificationEmailHtml({
               title: args.title,
               message: args.message,

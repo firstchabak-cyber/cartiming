@@ -29,7 +29,7 @@ export default async function DealerLandingPage() {
           For Dealers
         </p>
         <h1 className="mt-2 text-3xl font-bold text-foreground">
-          카타이밍 딜러로
+          카타임 딜러로
           <br />
           합류하세요
         </h1>
@@ -58,7 +58,7 @@ export default async function DealerLandingPage() {
 
       {/* 혜택 */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted">왜 카타이밍 딜러인가요?</h2>
+        <h2 className="text-sm font-semibold text-muted">왜 카타임 딜러인가요?</h2>
 
         <Card className="flex flex-col gap-1">
           <CardTitle>💰 업계 최저 수수료 1.5%</CardTitle>

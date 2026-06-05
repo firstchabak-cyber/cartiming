@@ -553,7 +553,7 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                           : " · 무사고"}
                       </span>
                       <span className="text-[10px] text-muted">
-                        {s.channel === "cartiming" ? "🏷 카타이밍" : "📍 외부"}
+                        {s.channel === "cartiming" ? "🏷 카타임" : "📍 외부"}
                         {s.snapshot_plate_category && (
                           <span className="ml-1 rounded bg-surface px-1 py-0.5">
                             {PLATE_LABEL[s.snapshot_plate_category] ?? ""}
@@ -652,7 +652,7 @@ function ShareButton({
     }
     lines.push("");
     lines.push("─────────────────");
-    lines.push("🤖 내 차 시세, AI 가 분석해주는 카타이밍");
+    lines.push("🤖 내 차 시세, AI 가 분석해주는 카타임");
     lines.push("✅ 차량번호·등록증 사진만 있으면 1분 분석");
     lines.push("✅ 헤이딜러 견적 수준의 업자 매입가 추정");
     lines.push("✅ 매각 적기 자동 알림 (무료)");

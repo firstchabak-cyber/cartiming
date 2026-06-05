@@ -75,7 +75,7 @@ export function formatSimilarSalesForPrompt(
       s.snapshot_damage_count > 0
         ? ` 외판손상 ${s.snapshot_damage_count}곳`
         : " 외판무사고";
-    const ch = s.channel === "cartiming" ? "[카타이밍]" : "[외부]";
+    const ch = s.channel === "cartiming" ? "[카타임]" : "[외부]";
     const plate = s.snapshot_plate_category
       ? `[${PLATE_LABEL[s.snapshot_plate_category]}]`
       : "[차종미분류]";

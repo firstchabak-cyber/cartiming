@@ -173,7 +173,7 @@ export default async function DealerListingDetailPage({
               <li>명의이전 진행 (15일 이내)</li>
             </ol>
             <p className="mt-2">
-              매각 완료 후 카타이밍에 수수료 정산 (매각가의 1.5%).
+              매각 완료 후 카타임에 수수료 정산 (매각가의 1.5%).
             </p>
           </div>
           {sale.matched_at && (

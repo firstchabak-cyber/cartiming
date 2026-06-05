@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     orderId,
-    orderName: `카타이밍 ${pkg.amountKrw.toLocaleString("ko-KR")}원 충전`,
+    orderName: `카타임 ${pkg.amountKrw.toLocaleString("ko-KR")}원 충전`,
     amountKrw: pkg.amountKrw,
     creditsToGrant: totalCredits(pkg),
   });

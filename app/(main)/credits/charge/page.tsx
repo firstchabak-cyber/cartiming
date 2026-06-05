@@ -8,7 +8,7 @@ import {
 } from "@/lib/credits/constants";
 
 export const metadata = {
-  title: "캐시 충전 | 카타이밍",
+  title: "캐시 충전 | 카타임",
 };
 
 export default function ChargePage() {

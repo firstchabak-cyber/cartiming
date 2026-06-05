@@ -10,7 +10,7 @@
 
 export const BUSINESS_INFO = {
   /** 상호 (사업자 등록증의 사업장명) */
-  companyName: "모토베이션 (서비스명: 카타이밍)",
+  companyName: "모토베이션 (서비스명: 카타임)",
 
   /** 대표자 성명 */
   representativeName: "장문성",

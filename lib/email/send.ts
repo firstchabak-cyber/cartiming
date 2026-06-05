@@ -32,7 +32,7 @@ export async function sendEmail(args: {
   const t = getTransporter();
   if (!t) return false;
   const from = (
-    process.env.SMTP_FROM || "카타이밍 <help@cartiming.app>"
+    process.env.SMTP_FROM || "카타임 <help@cartiming.app>"
   ).trim();
   try {
     await t.sendMail({
@@ -58,7 +58,7 @@ export function notificationEmailHtml(args: {
   return `<!doctype html><html lang="ko"><body style="margin:0;background:#f4f5f7;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
     <div style="background:#2563EB;padding:20px 24px;">
-      <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">카타이밍</p>
+      <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">카타임</p>
     </div>
     <div style="padding:24px;">
       <h1 style="margin:0 0 12px;font-size:18px;color:#111;">${escapeHtml(args.title)}</h1>
@@ -66,7 +66,7 @@ export function notificationEmailHtml(args: {
       <a href="${args.ctaUrl}" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;">자세히 보기</a>
     </div>
     <div style="padding:16px 24px;background:#fafafa;border-top:1px solid #eee;">
-      <p style="margin:0;font-size:11px;color:#999;">카타이밍 · 내 차의 매각 적기를 알려드립니다<br/>이 메일은 알림 설정에 따라 발송되었습니다. 마이페이지에서 알림을 끌 수 있어요.</p>
+      <p style="margin:0;font-size:11px;color:#999;">카타임 · 내 차의 매각 적기를 알려드립니다<br/>이 메일은 알림 설정에 따라 발송되었습니다. 마이페이지에서 알림을 끌 수 있어요.</p>
     </div>
   </div>
 </body></html>`;

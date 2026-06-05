@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { PaymentSuccessClient } from "@/components/credits/PaymentSuccessClient";
 
 export const metadata = {
-  title: "결제 완료 | 카타이밍",
+  title: "결제 완료 | 카타임",
 };
 
 export const dynamic = "force-dynamic";

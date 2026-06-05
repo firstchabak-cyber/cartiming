@@ -134,7 +134,7 @@ export async function PATCH(
     );
   }
 
-  // 카타이밍 통한 매각: matched 상태 sale_request 가 있으면 완료 처리를 위임한다.
+  // 카타임 통한 매각: matched 상태 sale_request 가 있으면 완료 처리를 위임한다.
   // 거래기록 생성 + 영구 슬롯 +1 은 completeSale 한 곳에서만 수행 (중복 방지).
   // sale_transactions.source_sale_request_id 의 UNIQUE 제약이 동시성 이중 처리를 막는다.
   if (parsed.data.status === "sold") {

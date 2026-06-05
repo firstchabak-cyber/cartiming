@@ -3,7 +3,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export const metadata = {
-  title: "결제 실패 | 카타이밍",
+  title: "결제 실패 | 카타임",
 };
 
 export default function PaymentFailPage({

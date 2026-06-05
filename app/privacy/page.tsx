@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BusinessFooter } from "@/components/layout/BusinessFooter";
 
 export const metadata = {
-  title: "개인정보처리방침 | 카타이밍",
+  title: "개인정보처리방침 | 카타임",
 };
 
 export default function PrivacyPage() {
@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     <div className="flex min-h-screen flex-col">
     <div className="mx-auto w-full max-w-3xl px-4 py-8 text-sm text-foreground">
       <Link href="/" className="text-xs text-primary hover:underline">
-        ← 카타이밍 홈
+        ← 카타임 홈
       </Link>
       <h1 className="mt-3 text-2xl font-bold">개인정보처리방침</h1>
       <p className="mt-1 text-xs text-muted">최종 개정일: 2026년 5월 28일</p>
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       <div className="mt-6 flex flex-col gap-6">
         <Section title="1. 개인정보의 수집 항목 및 수집 방법">
           <p>
-            카타이밍(이하 &quot;회사&quot;)은 서비스 제공을 위해 다음 정보를 수집합니다.
+            카타임(이하 &quot;회사&quot;)은 서비스 제공을 위해 다음 정보를 수집합니다.
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>

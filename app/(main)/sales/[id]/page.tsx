@@ -303,7 +303,7 @@ export default async function SaleStatusPage({
             ⏳ 관리자 검토 중
           </p>
           <p className="text-xs text-muted">
-            카타이밍 운영자가 신청 내용을 확인하고 있습니다.
+            카타임 운영자가 신청 내용을 확인하고 있습니다.
             보통 영업시간 내 1~3시간 안에 승인되며, 승인되면 즉시 48시간 입찰이 시작됩니다.
           </p>
           <p className="text-xs text-muted">

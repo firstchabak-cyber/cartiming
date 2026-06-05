@@ -38,7 +38,7 @@ export function AdminSidebar({ email }: { email: string }) {
         앱으로 돌아가기
       </Link>
       <div className="mb-2">
-        <p className="text-base font-bold text-primary">카타이밍 관리자</p>
+        <p className="text-base font-bold text-primary">카타임 관리자</p>
         <p className="text-[11px] text-muted">{email}</p>
       </div>
       <nav className="flex flex-col gap-1">

@@ -105,12 +105,12 @@ export function InstallPrompt() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/icons/icon-192.png"
-          alt="카타이밍"
+          alt="카타임"
           className="h-10 w-10 rounded-lg"
         />
         <div className="flex-1">
           <p className="text-sm font-semibold text-foreground">
-            홈 화면에 카타이밍 추가하기
+            홈 화면에 카타임 추가하기
           </p>
           <p className="text-xs text-muted">
             앱 설치 없이 아이콘만 추가돼요. 매각 적기 알림을 놓치지 마세요!

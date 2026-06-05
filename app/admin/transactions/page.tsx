@@ -39,7 +39,7 @@ export default async function AdminTransactionsPage() {
       <header>
         <h1 className="text-2xl font-bold text-foreground">실거래 매각 데이터</h1>
         <p className="text-sm text-muted">
-          AI 시세분석 학습 데이터 · 누적 {list.length}건 (카타이밍 {totalCartiming} · 외부{" "}
+          AI 시세분석 학습 데이터 · 누적 {list.length}건 (카타임 {totalCartiming} · 외부{" "}
           {totalExternal})
         </p>
       </header>
@@ -108,7 +108,7 @@ export default async function AdminTransactionsPage() {
                     <Badge
                       tone={t.channel === "cartiming" ? "success" : "neutral"}
                     >
-                      {t.channel === "cartiming" ? "카타이밍" : "외부"}
+                      {t.channel === "cartiming" ? "카타임" : "외부"}
                     </Badge>
                   </td>
                   <td className="p-2 text-right font-semibold">

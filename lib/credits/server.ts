@@ -111,7 +111,7 @@ export async function getVehicleSlots(userId: string): Promise<{
     .eq("status", "sold")
     .gte("sold_at", cutoff.toISOString());
 
-  // 카타이밍 통한 매각 완료 → 영구 슬롯 (user_credits.permanent_free_slots)
+  // 카타임 통한 매각 완료 → 영구 슬롯 (user_credits.permanent_free_slots)
   const { data: creditRow } = await supabase
     .from("user_credits")
     .select("permanent_free_slots")

@@ -110,7 +110,7 @@ export default async function CreditsPage() {
           🤝 친구 초대 시 친구가 첫 분석을 완료하면 1,000 캐시 적립
         </div>
         <p className="text-[11px] text-muted">
-          · 캐시는 카타이밍 서비스 내에서만 사용되며 현금 인출·이체는 불가합니다.
+          · 캐시는 카타임 서비스 내에서만 사용되며 현금 인출·이체는 불가합니다.
           미사용 충전 캐시는 결제 후 7일 이내 환불 가능합니다.
         </p>
       </Card>

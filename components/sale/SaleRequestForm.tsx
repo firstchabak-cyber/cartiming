@@ -329,7 +329,7 @@ export function SaleRequestForm({
 
       <Card className="flex flex-col gap-2 border-warning/30 bg-warning/5">
         <p className="text-sm font-semibold text-foreground">
-          🎁 카타이밍 통해 매각 시 혜택
+          🎁 카타임 통해 매각 시 혜택
         </p>
         <ul className="list-disc space-y-1 pl-5 text-xs text-muted">
           <li><strong>영구 무료 슬롯 +1</strong> — 매각 완료 후 새 차량을 등록해도 평생 무료</li>

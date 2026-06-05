@@ -166,11 +166,11 @@ export default async function VehicleDetailPage({
         <Card className="flex flex-col gap-2 border-primary/30 bg-primary/5">
           <p className="text-sm font-semibold text-foreground">매각하기</p>
           <p className="text-xs text-muted">
-            카타이밍에서 매각하면 <strong>영구 무료 슬롯 +1</strong> · 외부에서 매각하면
+            카타임에서 매각하면 <strong>영구 무료 슬롯 +1</strong> · 외부에서 매각하면
             가격 신고로 다른 사용자 시세 분석에 기여.
           </p>
           <Link href={`/vehicles/${vehicle.id}/sell`}>
-            <Button fullWidth>💼 카타이밍에서 매각 신청</Button>
+            <Button fullWidth>💼 카타임에서 매각 신청</Button>
           </Link>
           <ExternalSaleButton vehicleId={vehicle.id} />
           <details className="mt-1">

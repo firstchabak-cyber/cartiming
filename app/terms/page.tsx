@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BusinessFooter } from "@/components/layout/BusinessFooter";
 
 export const metadata = {
-  title: "이용약관 | 카타이밍",
+  title: "이용약관 | 카타임",
 };
 
 export default function TermsPage() {
@@ -10,14 +10,14 @@ export default function TermsPage() {
     <div className="flex min-h-screen flex-col">
     <div className="mx-auto w-full max-w-3xl px-4 py-8 text-sm text-foreground">
       <Link href="/" className="text-xs text-primary hover:underline">
-        ← 카타이밍 홈
+        ← 카타임 홈
       </Link>
       <h1 className="mt-3 text-2xl font-bold">이용약관</h1>
       <p className="mt-1 text-xs text-muted">최종 개정일: 2026년 5월 28일</p>
 
       <div className="mt-6 flex flex-col gap-6">
         <Section title="제1조 (목적)">
-          본 약관은 카타이밍(이하 &quot;회사&quot;)이 제공하는 차량 시세 분석 및
+          본 약관은 카타임(이하 &quot;회사&quot;)이 제공하는 차량 시세 분석 및
           매각 매칭 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와
           이용자(이하 &quot;회원&quot;)의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.
         </Section>
@@ -34,7 +34,7 @@ export default function TermsPage() {
             <li>
               <strong>캐시</strong>: 서비스 내에서 추가 시세 분석, 차량 추가 등록 등의 유료
               기능을 이용하기 위해 회원이 충전하거나 적립받는 서비스 전용 이용권. 환금성이
-              없어 현금 인출·이체·양도가 불가능하며, 카타이밍 서비스 내에서 회원 본인만
+              없어 현금 인출·이체·양도가 불가능하며, 카타임 서비스 내에서 회원 본인만
               사용할 수 있습니다.
             </li>
           </ul>
@@ -90,7 +90,7 @@ export default function TermsPage() {
             </li>
             <li>
               <strong>
-                캐시는 카타이밍 서비스 내의 유료 기능(시세 분석 추가, 차량 추가 등록 등)
+                캐시는 카타임 서비스 내의 유료 기능(시세 분석 추가, 차량 추가 등록 등)
                 이용에만 사용할 수 있습니다.
               </strong>{" "}
               캐시는 현금이 아니며, 현금으로의 인출·이체·환전, 제3자에게의 양도·매매,
@@ -123,7 +123,7 @@ export default function TermsPage() {
         <Section title="제6조의2 (딜러 매각 수수료)">
           <ol className="list-decimal space-y-1 pl-5">
             <li>
-              카타이밍을 통해 차량을 매입한 딜러는 거래 완료 시 회사가 정한 매각
+              카타임을 통해 차량을 매입한 딜러는 거래 완료 시 회사가 정한 매각
               수수료(매각가 1,000만원 미만 15만원 고정, 1,000만원 이상 매각가의
               1.5%)를 회사에 납부합니다.
             </li>
