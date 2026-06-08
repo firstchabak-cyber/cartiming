@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { History, LineChart, Pencil, Plus, Wrench, Wallet } from "lucide-react";
+import { History, LineChart, Pencil, Wallet } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DeleteVehicleButton } from "@/components/vehicle/DeleteVehicleButton";
-import { DeleteMaintenanceButton } from "@/components/vehicle/DeleteMaintenanceButton";
 import { MarkAsSoldButton } from "@/components/vehicle/MarkAsSoldButton";
 import { RestoreVehicleButton } from "@/components/vehicle/RestoreVehicleButton";
 import { ExternalSaleButton } from "@/components/sale/ExternalSaleButton";
 import { PhotoGallery } from "@/components/vehicle/PhotoGallery";
-import { CATEGORY_TONE } from "@/lib/constants/maintenance";
-import type { MaintenanceCategory } from "@/lib/constants/maintenance";
 import {
   BODY_TYPE_LABELS,
   VEHICLE_CLASS_LABELS,
@@ -54,7 +51,7 @@ export default async function VehicleDetailPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff, options, damage_map, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff_count, options, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -96,18 +93,6 @@ export default async function VehicleDetailPage({
   }));
 
   const latestAnalysis = analyses[0] ?? null;
-
-  const { data: maintenanceRaw } = await supabase
-    .from("vehicle_maintenance")
-    .select("id, category, part, description, performed_at, cost")
-    .eq("vehicle_id", vehicle.id)
-    .eq("user_id", user.id)
-    .order("performed_at", { ascending: false });
-
-  const maintenance = (maintenanceRaw ?? []).map((m) => ({
-    ...m,
-    category: m.category as MaintenanceCategory,
-  }));
 
   const { data: photoRows } = await supabase
     .from("vehicle_photos")
@@ -241,15 +226,18 @@ export default async function VehicleDetailPage({
           {vehicle.key_count != null && (
             <>
               <dt className="text-muted">자동차키</dt>
-              <dd className="text-right">{vehicle.key_count}개</dd>
+              <dd className="text-right">
+                {vehicle.key_count >= 3 ? "3개 이상" : `${vehicle.key_count}개`}
+              </dd>
             </>
           )}
-          {vehicle.wheel_scuff && (
-            <>
-              <dt className="text-muted">휠 기스</dt>
-              <dd className="text-right">있음</dd>
-            </>
-          )}
+          {vehicle.wheel_scuff_count != null &&
+            vehicle.wheel_scuff_count > 0 && (
+              <>
+                <dt className="text-muted">휠 기스</dt>
+                <dd className="text-right">{vehicle.wheel_scuff_count}개</dd>
+              </>
+            )}
         </dl>
       </Card>
 
@@ -465,91 +453,6 @@ export default async function VehicleDetailPage({
         </Card>
       )}
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">
-            외판 상태 (정비/사고)
-          </h2>
-          <Link href={`/vehicles/${vehicle.id}/maintenance/new`}>
-            <Button size="sm">
-              <Plus className="h-4 w-4" />
-              입력·수정
-            </Button>
-          </Link>
-        </div>
-
-        {(() => {
-          const map =
-            vehicle.damage_map && typeof vehicle.damage_map === "object"
-              ? (vehicle.damage_map as Record<string, string>)
-              : {};
-          const entries = Object.entries(map).filter(([, s]) => s && s !== "없음");
-          if (entries.length === 0) return null;
-          return (
-            <Card className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-foreground">
-                현재 입력된 외판 상태 ({entries.length}곳)
-              </p>
-              <ul className="flex flex-wrap gap-1">
-                {entries.map(([part, state]) => (
-                  <li
-                    key={part}
-                    className={
-                      state === "교환"
-                        ? "rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger"
-                        : "rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning"
-                    }
-                  >
-                    {part} · {state}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          );
-        })()}
-
-        {maintenance.length === 0 ? (
-          <Card className="flex flex-col items-center gap-2 py-8 text-center">
-            <Wrench className="h-8 w-8 text-muted" />
-            <CardDescription>
-              아직 입력된 외판 상태가 없습니다. &quot;입력·수정&quot; 을 눌러
-              차량 도면에서 부위를 클릭하세요.
-            </CardDescription>
-          </Card>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {maintenance.map((m) => (
-              <li key={m.id}>
-                <Card>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge tone={CATEGORY_TONE[m.category]}>
-                          {m.category}
-                        </Badge>
-                        <CardTitle className="text-sm">{m.part}</CardTitle>
-                      </div>
-                      {m.description && (
-                        <CardDescription className="mt-1">
-                          {m.description}
-                        </CardDescription>
-                      )}
-                      <div className="mt-2 flex items-center gap-3 text-xs text-muted">
-                        <span>{formatDate(m.performed_at)}</span>
-                        {m.cost != null && <span>{formatKRW(m.cost)}</span>}
-                      </div>
-                    </div>
-                    <DeleteMaintenanceButton
-                      maintenanceId={m.id}
-                      label={`${m.category} · ${m.part}`}
-                    />
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

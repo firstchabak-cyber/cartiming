@@ -49,7 +49,8 @@ const vehicleSchema = z.object({
     .optional(),
   seating_capacity: z.number().int().gte(1).lte(60).optional(),
   key_count: z.number().int().gte(0).lte(10).nullable().optional(),
-  wheel_scuff: z.boolean().optional(),
+  wheel_scuff_count: z.number().int().gte(0).lte(4).nullable().optional(),
+  damage_note: z.string().trim().max(2000).nullable().optional(),
   damage_map: z
     .record(
       z.enum(CAR_BODY_PARTS as unknown as [string, ...string[]]),
@@ -144,7 +145,8 @@ export async function POST(request: Request) {
       inspection_valid_until: input.inspection_valid_until ?? null,
       seating_capacity: input.seating_capacity ?? null,
       key_count: input.key_count ?? null,
-      wheel_scuff: input.wheel_scuff ?? false,
+      wheel_scuff_count: input.wheel_scuff_count ?? null,
+      damage_note: input.damage_note ?? null,
       damage_map: input.damage_map ?? {},
       options: input.options && input.options.length > 0 ? input.options : null,
       purchase_price: input.purchase_price ?? null,

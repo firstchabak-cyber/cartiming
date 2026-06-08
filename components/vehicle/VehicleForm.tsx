@@ -57,6 +57,8 @@ const schema = z.object({
     .optional(),
   seating_capacity: z.string().regex(/^\d*$/, "숫자만").optional(),
   key_count: z.string().regex(/^\d*$/, "숫자만").optional(),
+  wheel_scuff_count: z.string().regex(/^\d*$/, "숫자만").optional(),
+  damage_note: z.string().optional(),
   extra_options_text: z.string().optional(),
   loan_principal: z.string().regex(/^\d*$/, "숫자만").optional(),
   loan_started_at: z
@@ -94,7 +96,8 @@ export type VehicleFormDefaults = {
   inspection_valid_until?: string | null;
   seating_capacity?: number | null;
   key_count?: number | null;
-  wheel_scuff?: boolean | null;
+  wheel_scuff_count?: number | null;
+  damage_note?: string | null;
   damage_map?: Record<string, string> | null;
   options?: string[] | null;
   loan_principal?: number | null;
@@ -143,11 +146,11 @@ export function VehicleForm(props: Props) {
       ? (v.damage_map as DamageMap)
       : {};
   const [damageMap, setDamageMap] = useState<DamageMap>(initialDamageMap);
-  const [wheelScuff, setWheelScuff] = useState<boolean>(v?.wheel_scuff ?? false);
   const [condOpen, setCondOpen] = useState(
     Object.keys(initialDamageMap).length > 0 ||
-      (v?.wheel_scuff ?? false) ||
-      v?.key_count != null,
+      (v?.wheel_scuff_count != null && v.wheel_scuff_count > 0) ||
+      v?.key_count != null ||
+      !!v?.damage_note,
   );
 
   const handlePartClick = (part: string) => {
@@ -201,6 +204,9 @@ export function VehicleForm(props: Props) {
       seating_capacity:
         v?.seating_capacity != null ? String(v.seating_capacity) : "",
       key_count: v?.key_count != null ? String(v.key_count) : "",
+      wheel_scuff_count:
+        v?.wheel_scuff_count != null ? String(v.wheel_scuff_count) : "",
+      damage_note: v?.damage_note ?? "",
       extra_options_text: initialExtraOptions,
       loan_principal:
         v?.loan_principal != null ? String(v.loan_principal) : "",
@@ -389,7 +395,12 @@ export function VehicleForm(props: Props) {
         : isEdit
           ? null
           : undefined,
-      wheel_scuff: wheelScuff,
+      wheel_scuff_count: values.wheel_scuff_count
+        ? Number(values.wheel_scuff_count)
+        : isEdit
+          ? null
+          : undefined,
+      damage_note: values.damage_note?.trim() || (isEdit ? null : undefined),
       damage_map: damageMap,
       options:
         optionsCombined.length > 0
@@ -785,17 +796,18 @@ export function VehicleForm(props: Props) {
               );
             })()}
 
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-              <input
-                type="checkbox"
-                checked={wheelScuff}
-                onChange={(e) => setWheelScuff(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <span className="select-none text-foreground">
-                휠에 기스(스크래치)가 있어요
-              </span>
-            </label>
+            <SelectField
+              label="휠 기스(스크래치) 갯수"
+              {...register("wheel_scuff_count")}
+              options={[
+                { value: "", label: "선택 안 함" },
+                { value: "0", label: "없음" },
+                { value: "1", label: "1개" },
+                { value: "2", label: "2개" },
+                { value: "3", label: "3개" },
+                { value: "4", label: "4개" },
+              ]}
+            />
 
             <SelectField
               label="자동차키(스마트키) 갯수"
@@ -804,14 +816,29 @@ export function VehicleForm(props: Props) {
                 { value: "", label: "선택 안 함" },
                 { value: "1", label: "1개" },
                 { value: "2", label: "2개" },
-                { value: "3", label: "3개" },
-                { value: "4", label: "4개 이상" },
+                { value: "3", label: "3개 이상" },
               ]}
             />
             <p className="-mt-2 text-[11px] text-muted">
               💡 스마트키가 1개뿐이면 매수자가 키 추가 제작비(보통 10~30만원)를
-              감안할 수 있어요. 2개면 시세에 유리합니다.
+              감안할 수 있어요. 2개 이상이면 시세에 유리합니다.
             </p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground">
+                사고·수리 메모 (선택)
+              </label>
+              <p className="text-xs text-muted">
+                일자와 파손 부위를 자유롭게 적어주세요. 위 도면에서 해당 부위를
+                눌러 표시할 수도 있어요. 일자는 모르면 비워두셔도 됩니다.
+              </p>
+              <textarea
+                rows={3}
+                placeholder="예) 2023-08 뒷범퍼 긁힘 도색 / 앞펜더(좌) 판금 (일자 모름)"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-base text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                {...register("damage_note")}
+              />
+            </div>
           </div>
         )}
 

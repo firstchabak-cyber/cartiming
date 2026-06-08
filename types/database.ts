@@ -52,7 +52,8 @@ export interface Database {
           inspection_valid_until: string | null;
           seating_capacity: number | null;
           key_count: number | null;
-          wheel_scuff: boolean | null;
+          wheel_scuff_count: number | null;
+          damage_note: string | null;
           options: string[] | null;
           loan_principal: number | null;
           loan_started_at: string | null;

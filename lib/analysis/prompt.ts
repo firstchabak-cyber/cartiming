@@ -18,8 +18,9 @@ export type VehicleForPrompt = {
   vehicle_class: string | null;
   options: string[] | null;
   damage_map: Record<string, string> | null;
-  wheel_scuff: boolean | null;
+  wheel_scuff_count: number | null;
   key_count: number | null;
+  damage_note: string | null;
   // 추가 식별/감가 영향 필드
   plate_number: string | null;
   color: string | null;
@@ -343,9 +344,18 @@ ${plateLine}
         }`
       : "정보 없음"
   }
-- 휠 기스(스크래치): ${vehicle.wheel_scuff ? "있음 (휠은 감가 미반영 소모품 — 시세 영향 거의 없음)" : "없음/정보 없음"}
+- 휠 기스(스크래치): ${
+    vehicle.wheel_scuff_count != null && vehicle.wheel_scuff_count > 0
+      ? `${vehicle.wheel_scuff_count}개 (휠은 감가 미반영 소모품 — 시세 영향 거의 없음, 매수자가 개당 3~8만원 복원비 언급 가능)`
+      : "없음/정보 없음"
+  }
 
 ${damageSection}
+${
+  vehicle.damage_note
+    ? `\n차주가 적은 사고·수리 메모: ${vehicle.damage_note}\n(위 메모의 일자·부위를 외판 상태와 함께 감가 판단에 참고하세요. 일자가 없으면 시점 미상으로 간주.)`
+    : ""
+}
 
 정비/사고 이력 (총 ${maintenance.length}건, 사고 ${accidentCount}건 / 판금·교환·수리 ${repairCount}건):
 ${maintenanceLines}
