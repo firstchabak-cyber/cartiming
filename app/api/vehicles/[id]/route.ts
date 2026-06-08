@@ -69,7 +69,7 @@ const patchSchema = z
     loan_months: z.number().int().gte(1).lte(240).nullable().optional(),
     loan_apr: z.number().gte(0).lte(30).nullable().optional(),
     damage_map: z
-      .record(
+      .partialRecord(
         z.enum(CAR_BODY_PARTS as unknown as [string, ...string[]]),
         z.enum(DAMAGE_STATES as unknown as [string, ...string[]]),
       )

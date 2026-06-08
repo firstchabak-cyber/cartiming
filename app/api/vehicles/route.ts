@@ -52,7 +52,7 @@ const vehicleSchema = z.object({
   wheel_scuff_count: z.number().int().gte(0).lte(4).nullable().optional(),
   damage_note: z.string().trim().max(2000).nullable().optional(),
   damage_map: z
-    .record(
+    .partialRecord(
       z.enum(CAR_BODY_PARTS as unknown as [string, ...string[]]),
       z.enum(DAMAGE_STATES as unknown as [string, ...string[]]),
     )
