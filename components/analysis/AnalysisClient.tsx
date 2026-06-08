@@ -262,13 +262,14 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
           variant="outline"
           fullWidth
         >
-          {loading ? "분석 중..." : "🔄 최신 시세로 다시 분석"}
+          {loading ? "분석 중..." : "🔄 다시 분석"}
         </Button>
         <p className="text-xs text-muted">
-          24시간 이내 분석은 저장된 결과를 무료로 즉시 보여드려요. 시세는 매일
-          바뀌니, 최신 시세가 궁금하면 &quot;다시 분석&quot;을 눌러주세요. (매월{" "}
+          차량 정보가 그대로면 다시 분석해도 같은 결과를 무료로 바로 보여드려요.
+          주행거리·옵션·외판 상태 등을 수정하면 새로 분석합니다. 새 분석은 가입 후{" "}
           {FREE_ANALYSIS_PER_MONTH}회 무료, 이후 1회당{" "}
-          {CREDIT_COSTS.analysisOverage} 캐시)
+          {CREDIT_COSTS.analysisOverage} 캐시예요. (시세의 시간 변화는 매월 1일
+          자동 분석이 반영합니다.)
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
       </Card>
@@ -304,7 +305,7 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                   )}
                 >
                   {result.cached
-                    ? `캐시 · ${formatRelativeTime(result.generated_at)}`
+                    ? `이전 결과 · ${formatRelativeTime(result.generated_at)}`
                     : "방금 분석됨"}
                 </span>
               </div>
@@ -330,11 +331,7 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
               disabled={loading}
               className="self-start text-xs font-medium text-primary hover:underline disabled:opacity-50"
             >
-              {loading
-                ? "재분석 중..."
-                : result.cached
-                  ? "🔄 최신 분석 요청 (Gemini 재호출)"
-                  : "🔄 다시 분석 (Gemini 재호출)"}
+              {loading ? "재분석 중..." : "🔄 다시 분석"}
             </button>
             <Link
               href={`/vehicles/${selectedId}`}
