@@ -39,7 +39,7 @@ export default async function AdminSaleDetailPage({
   const { data: vehicle } = await admin
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, purchase_price, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", sale.vehicle_id)
     .maybeSingle();
@@ -148,6 +148,33 @@ export default async function AdminSaleDetailPage({
                   <>
                     <dt className="text-muted">승차정원</dt>
                     <dd className="text-right">{vehicle.seating_capacity}명</dd>
+                  </>
+                )}
+                {vehicle.key_count != null && (
+                  <>
+                    <dt className="text-muted">자동차키</dt>
+                    <dd className="text-right">
+                      {vehicle.key_count >= 3
+                        ? "3개 이상"
+                        : `${vehicle.key_count}개`}
+                    </dd>
+                  </>
+                )}
+                {vehicle.wheel_scuff_count != null &&
+                  vehicle.wheel_scuff_count > 0 && (
+                    <>
+                      <dt className="text-muted">휠 기스</dt>
+                      <dd className="text-right">
+                        {vehicle.wheel_scuff_count}개
+                      </dd>
+                    </>
+                  )}
+                {vehicle.purchase_price != null && (
+                  <>
+                    <dt className="text-muted">구입가(차주)</dt>
+                    <dd className="text-right">
+                      {formatKRW(vehicle.purchase_price)}
+                    </dd>
                   </>
                 )}
                 {vehicle.color && (
@@ -308,6 +335,23 @@ export default async function AdminSaleDetailPage({
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        {vehicle?.damage_note && (
+          <div className="mt-1 rounded-lg bg-surface p-2 text-xs">
+            <p className="font-semibold text-foreground">차주 사고·수리 메모</p>
+            <p className="mt-0.5 text-muted">{vehicle.damage_note}</p>
+          </div>
+        )}
+        {vehicle?.loan_principal != null && (
+          <div className="mt-1 rounded-lg border border-border bg-surface p-2 text-xs">
+            <p className="font-semibold text-foreground">차주 대출 정보</p>
+            <p className="mt-0.5 text-muted">
+              원금 {formatKRW(vehicle.loan_principal)}
+              {vehicle.loan_months != null && ` · ${vehicle.loan_months}개월`}
+              {vehicle.loan_apr != null && ` · 연 ${vehicle.loan_apr}%`}
+              {vehicle.loan_started_at && ` · 실행 ${vehicle.loan_started_at}`}
+            </p>
           </div>
         )}
       </Card>

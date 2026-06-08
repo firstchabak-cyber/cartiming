@@ -30,7 +30,7 @@ export default async function DealerListingDetailPage({
   const { data: sale } = await supabase
     .from("sale_requests")
     .select(
-      "id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, selected_bid_id, matched_at, final_price, adjustment_reason, adjusted_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
+      "id, status, current_mileage, contact_phone, contact_kakao, sale_location, sale_timing, sale_reason, additional_notes, bidding_closes_at, selected_bid_id, matched_at, final_price, adjustment_reason, adjusted_at, created_at, vehicle_id, vehicle:vehicles(manufacturer, model, trim, year, mileage, fuel_type, transmission, body_type, vehicle_class, displacement_cc, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity)",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -49,6 +49,9 @@ export default async function DealerListingDetailPage({
     displacement_cc: number | null;
     options: string[] | null;
     damage_map: Record<string, string> | null;
+    wheel_scuff_count: number | null;
+    key_count: number | null;
+    damage_note: string | null;
     plate_number: string | null;
     color: string | null;
     interior_color: string | null;
@@ -303,6 +306,22 @@ export default async function DealerListingDetailPage({
           <dd className="text-right">
             {v?.seating_capacity != null ? `${v.seating_capacity}명` : "미입력"}
           </dd>
+          <dt className="text-muted">자동차키</dt>
+          <dd className="text-right">
+            {v?.key_count != null
+              ? v.key_count >= 3
+                ? "3개 이상"
+                : `${v.key_count}개`
+              : "미입력"}
+          </dd>
+          <dt className="text-muted">휠 기스</dt>
+          <dd className="text-right">
+            {v?.wheel_scuff_count != null
+              ? v.wheel_scuff_count > 0
+                ? `${v.wheel_scuff_count}개`
+                : "없음"
+              : "미입력"}
+          </dd>
         </dl>
       </Card>
 
@@ -354,6 +373,12 @@ export default async function DealerListingDetailPage({
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        {v?.damage_note && (
+          <div className="mt-1 rounded-lg bg-surface p-2 text-xs">
+            <p className="font-semibold text-foreground">차주 사고·수리 메모</p>
+            <p className="mt-0.5 text-muted">{v.damage_note}</p>
           </div>
         )}
       </Card>

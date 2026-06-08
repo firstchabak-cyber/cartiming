@@ -10,6 +10,7 @@ import {
   type MaintenanceRecord,
   type VehicleForPrompt,
 } from "@/lib/analysis/prompt";
+import { computeInputHash } from "@/lib/analysis/fingerprint";
 import { createAndDispatch } from "@/lib/notify/dispatch";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,7 @@ async function analyzeOne(
     predicted_3y: parsed.predicted_3y,
     signal: parsed.signal,
     rationale: parsed.rationale,
+    input_hash: computeInputHash(vehicle, records),
   });
 
   const carLabel = `${vehicle.manufacturer} ${vehicle.model}`;

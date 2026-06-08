@@ -83,11 +83,12 @@ export interface Database {
           signal: "sell_now" | "review" | "hold";
           rationale: string;
           generated_at: string;
+          input_hash: string | null;
         };
         Insert: Omit<
           Database["public"]["Tables"]["price_analyses"]["Row"],
-          "id" | "generated_at"
-        > & { id?: string; generated_at?: string };
+          "id" | "generated_at" | "input_hash"
+        > & { id?: string; generated_at?: string; input_hash?: string | null };
         Update: Partial<
           Database["public"]["Tables"]["price_analyses"]["Insert"]
         >;

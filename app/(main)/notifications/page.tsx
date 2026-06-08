@@ -3,6 +3,7 @@ import { BellOff, Bell, TrendingUp } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MarkAllReadButton } from "@/components/layout/MarkAllReadButton";
+import { MarkReadOnView } from "@/components/notifications/MarkReadOnView";
 import { NotificationSettings } from "@/components/notifications/NotificationSettings";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils/format";
@@ -39,6 +40,8 @@ export default async function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* 이 페이지를 열면 자동으로 모두 읽음 처리 (배지 숫자 제거) */}
+      <MarkReadOnView hasUnread={unreadCount > 0} />
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">알림</h1>
         <MarkAllReadButton disabled={unreadCount === 0} />

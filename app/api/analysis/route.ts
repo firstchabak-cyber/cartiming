@@ -10,6 +10,7 @@ import {
   type VehicleForPrompt,
   type MaintenanceRecord,
 } from "@/lib/analysis/prompt";
+import { computeInputHash } from "@/lib/analysis/fingerprint";
 import {
   getMonthlyAnalysisCount,
   spendCredits,
@@ -35,10 +36,6 @@ const requestSchema = z.object({
   vehicleId: z.string().uuid(),
   force: z.boolean().optional(),
 });
-
-const CACHE_TTL_HOURS = 24;
-// '다시 분석'(force) 중복 클릭 방어: 이 시간 안에 다시 누르면 직전 결과 재사용(차감 X)
-const COOLDOWN_SECONDS = 60;
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -99,27 +96,24 @@ export async function POST(request: Request) {
   const records: MaintenanceRecord[] = maintenance ?? [];
   const ctx = deriveLoanContext(vehicle as VehicleForPrompt);
 
-  // 캐시 검사:
-  //  - 일반 분석(force=false): 24시간 이내 결과 재사용 (Gemini 호출·차감 X)
-  //  - 다시 분석(force=true): 60초 이내 결과는 재사용 (중복 클릭 방어 — 1분간 여러 번 눌러도 1회로 처리)
+  // 입력값 지문(hash) 기반 재사용:
+  //  - 차량 입력값(+정비이력)이 직전 분석과 똑같으면 → AI 재호출·차감 없이 직전 결과 그대로 반환.
+  //  - 입력값이 바뀌었으면 → 아래에서 새로 분석.
+  //  (시세의 '시간에 따른 변화'는 매월 1일 자동분석이 반영한다.)
+  const inputHash = computeInputHash(vehicle as VehicleForPrompt, records);
   {
-    const ttlMs = parsed.data.force
-      ? COOLDOWN_SECONDS * 1000
-      : CACHE_TTL_HOURS * 60 * 60 * 1000;
-    const cutoff = new Date(Date.now() - ttlMs).toISOString();
     const { data: cached } = await supabase
       .from("price_analyses")
       .select(
-        "current_price, current_price_min, current_price_max, predicted_1m, predicted_3m, predicted_6m, predicted_1y, predicted_2y, predicted_3y, signal, rationale, generated_at",
+        "current_price, current_price_min, current_price_max, predicted_1m, predicted_3m, predicted_6m, predicted_1y, predicted_2y, predicted_3y, signal, rationale, generated_at, input_hash",
       )
       .eq("vehicle_id", vehicle.id)
       .eq("user_id", user.id)
-      .gte("generated_at", cutoff)
       .order("generated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (cached) {
+    if (cached && cached.input_hash && cached.input_hash === inputHash) {
       const sims = await getSimilarSales({
         manufacturer: vehicle.manufacturer,
         model: vehicle.model,
@@ -152,6 +146,7 @@ export async function POST(request: Request) {
         rationale: cached.rationale,
         generated_at: cached.generated_at,
         cached: true,
+        reused_reason: "no_input_change",
         similar_sales: sims,
         loan: ctx.loan
           ? {
@@ -368,6 +363,7 @@ export async function POST(request: Request) {
       predicted_3y: analysis.predicted_3y,
       signal: analysis.signal,
       rationale: analysis.rationale,
+      input_hash: inputHash,
     })
     .select("id, generated_at")
     .single();

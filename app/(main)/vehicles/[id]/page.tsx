@@ -92,6 +92,23 @@ export default async function VehicleDetailPage({
     signal: a.signal as "sell_now" | "review" | "hold",
   }));
 
+  // 진행 중인 매각 신청 (있으면 진행상황·사진 페이지로 다시 갈 수 있게 안내)
+  const { data: activeSale } = await supabase
+    .from("sale_requests")
+    .select("id, status")
+    .eq("vehicle_id", vehicle.id)
+    .eq("user_id", user.id)
+    .in("status", ["pending", "bidding", "matched"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const SALE_STATUS_LABEL: Record<string, string> = {
+    pending: "관리자 검토 중",
+    bidding: "입찰 진행 중",
+    matched: "딜러 선택 완료",
+  };
+
   const latestAnalysis = analyses[0] ?? null;
 
   const { data: photoRows } = await supabase
@@ -147,7 +164,27 @@ export default async function VehicleDetailPage({
         </div>
       </header>
 
-      {!isSold && (
+      {!isSold && activeSale && (
+        <Card className="flex flex-col gap-2 border-primary/40 bg-primary/5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              💼 매각 신청 진행 중
+            </p>
+            <Badge tone="warning">
+              {SALE_STATUS_LABEL[activeSale.status] ?? activeSale.status}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted">
+            진행상황 확인과 차량 사진 추가는 아래 버튼에서 하실 수 있어요.
+            사진이 많을수록 딜러 입찰가가 올라갑니다.
+          </p>
+          <Link href={`/sales/${activeSale.id}`}>
+            <Button fullWidth>📸 진행상황 보기 · 사진 추가</Button>
+          </Link>
+        </Card>
+      )}
+
+      {!isSold && !activeSale && (
         <Card className="flex flex-col gap-2 border-primary/30 bg-primary/5">
           <p className="text-sm font-semibold text-foreground">매각하기</p>
           <p className="text-xs text-muted">

@@ -1,30 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function NotificationBell() {
   const [unread, setUnread] = useState(0);
+  const pathname = usePathname();
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications?unread=1", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setUnread(data?.unreadCount ?? 0);
+    } catch {
+      // ignore - 비로그인 등
+    }
+  }, []);
+
+  // 페이지 이동 때마다 + 알림 읽음 이벤트가 오면 즉시 배지 갱신
+  useEffect(() => {
+    load();
+  }, [load, pathname]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const res = await fetch("/api/notifications?unread=1", {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled) setUnread(data?.unreadCount ?? 0);
-      } catch {
-        // ignore - 비로그인 등
-      }
-    }
-
-    load();
+    const onChanged = () => load();
+    window.addEventListener("notifications:changed", onChanged);
 
     const supabase = createClient();
     const channel = supabase
@@ -37,10 +43,10 @@ export function NotificationBell() {
       .subscribe();
 
     return () => {
-      cancelled = true;
+      window.removeEventListener("notifications:changed", onChanged);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [load]);
 
   return (
     <Link
