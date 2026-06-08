@@ -172,7 +172,7 @@ export async function GET(request: Request) {
   const { data: vehicles, error } = await admin
     .from("vehicles")
     .select(
-      "id, user_id, manufacturer, model, trim, year, mileage, purchase_price, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, user_id, manufacturer, model, trim, year, mileage, purchase_price, msrp, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("status", "active");
 

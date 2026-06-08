@@ -59,6 +59,7 @@ const vehicleSchema = z.object({
     .optional(),
   options: z.array(z.string().trim().min(1)).optional(),
   purchase_price: z.number().int().nonnegative().optional(),
+  msrp: z.number().int().nonnegative().optional(),
   loan_principal: z.number().int().nonnegative().optional(),
   loan_started_at: z
     .string()
@@ -150,6 +151,7 @@ export async function POST(request: Request) {
       damage_map: input.damage_map ?? {},
       options: input.options && input.options.length > 0 ? input.options : null,
       purchase_price: input.purchase_price ?? null,
+      msrp: input.msrp ?? null,
       loan_principal: input.loan_principal ?? null,
       loan_started_at: input.loan_started_at ?? null,
       loan_months: input.loan_months ?? null,

@@ -60,6 +60,7 @@ const patchSchema = z
     damage_note: z.string().trim().max(2000).nullable().optional(),
     options: z.array(z.string().trim().min(1)).nullable().optional(),
     purchase_price: z.number().int().nonnegative().nullable().optional(),
+    msrp: z.number().int().nonnegative().nullable().optional(),
     loan_principal: z.number().int().nonnegative().nullable().optional(),
     loan_started_at: z
       .string()

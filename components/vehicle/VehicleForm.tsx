@@ -36,6 +36,7 @@ const schema = z.object({
   year: z.string().regex(/^\d{4}$/, "4자리 연식"),
   mileage: z.string().regex(/^\d+$/, "주행거리는 숫자만"),
   purchase_price: z.string().regex(/^\d*$/, "숫자만").optional(),
+  msrp: z.string().regex(/^\d*$/, "숫자만").optional(),
   trim: z.string().optional(),
   registered_at: z
     .string()
@@ -82,6 +83,7 @@ export type VehicleFormDefaults = {
   year?: number | null;
   mileage?: number | null;
   purchase_price?: number | null;
+  msrp?: number | null;
   registered_at?: string | null;
   fuel_type?: string | null;
   transmission?: string | null;
@@ -186,6 +188,7 @@ export function VehicleForm(props: Props) {
       mileage: v?.mileage != null ? String(v.mileage) : "",
       purchase_price:
         v?.purchase_price != null ? String(v.purchase_price) : "",
+      msrp: v?.msrp != null ? String(v.msrp) : "",
       registered_at: v?.registered_at?.slice(0, 10) ?? "",
       fuel_type: (v?.fuel_type as FormValues["fuel_type"]) ?? "",
       transmission: (v?.transmission as FormValues["transmission"]) ?? "",
@@ -361,6 +364,11 @@ export function VehicleForm(props: Props) {
       mileage: Number(values.mileage),
       purchase_price: values.purchase_price
         ? Number(values.purchase_price)
+        : isEdit
+          ? null
+          : undefined,
+      msrp: values.msrp
+        ? Number(values.msrp)
         : isEdit
           ? null
           : undefined,
@@ -573,6 +581,18 @@ export function VehicleForm(props: Props) {
           <p className="-mt-1 text-[11px] text-muted">
             💡 처음 구입하신 금액(취득가)을 입력하면 시세 분석이 더 정확해져요.
             모르면 비워두셔도 됩니다.
+          </p>
+          <NumberInput
+            name="msrp"
+            control={control}
+            label="신차가격 / 출고가 (원, 선택)"
+            placeholder="예: 42,000,000"
+            error={errors.msrp?.message}
+          />
+          <p className="-mt-1 text-[11px] text-muted">
+            💡 이 차가 <strong>새 차였을 때의 출고가(신차가격)</strong>예요. 입력하면
+            그 값을 기준으로 감가를 계산해 더 정확해집니다. 비워두면 AI가 해당
+            연식·트림의 신차가격을 추정해서 사용해요.
           </p>
         </section>
 
@@ -931,7 +951,12 @@ function CollapsibleHeader({
 }
 
 type NumberInputProps = {
-  name: "mileage" | "displacement_cc" | "loan_principal" | "purchase_price";
+  name:
+    | "mileage"
+    | "displacement_cc"
+    | "loan_principal"
+    | "purchase_price"
+    | "msrp";
   control: Control<FormValues>;
   label: string;
   placeholder?: string;

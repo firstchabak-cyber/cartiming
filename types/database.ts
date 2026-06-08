@@ -54,6 +54,7 @@ export interface Database {
           key_count: number | null;
           wheel_scuff_count: number | null;
           damage_note: string | null;
+          msrp: number | null;
           options: string[] | null;
           loan_principal: number | null;
           loan_started_at: string | null;

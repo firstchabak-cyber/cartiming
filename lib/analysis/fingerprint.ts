@@ -39,6 +39,7 @@ const VEHICLE_FIELDS = [
   "engine_code",
   "seating_capacity",
   "purchase_price",
+  "msrp",
   "loan_principal",
   "loan_started_at",
   "loan_months",

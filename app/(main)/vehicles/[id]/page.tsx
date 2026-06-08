@@ -51,7 +51,7 @@ export default async function VehicleDetailPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff_count, options, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff_count, msrp, options, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -225,6 +225,12 @@ export default async function VehicleDetailPage({
           <dd className="text-right">{vehicle.year}년</dd>
           <dt className="text-muted">주행거리</dt>
           <dd className="text-right">{formatMileage(vehicle.mileage)}</dd>
+          {vehicle.msrp != null && (
+            <>
+              <dt className="text-muted">신차가격</dt>
+              <dd className="text-right">{formatKRW(vehicle.msrp)}</dd>
+            </>
+          )}
           {vehicle.fuel_type && (
             <>
               <dt className="text-muted">연료</dt>
