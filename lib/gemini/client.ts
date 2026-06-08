@@ -63,11 +63,13 @@ export async function analyzePrice(prompt: string): Promise<string> {
   for (const modelName of TEXT_MODELS) {
     const model = getClient().getGenerativeModel({
       model: modelName,
-      // 시세 분석은 매번 같은 입력에 비슷한 값이 나와야 하므로 무작위성을 낮춘다.
-      // (기본 temperature 1.0 → 조회할 때마다 가격이 출렁이는 원인)
+      // 시세 분석은 같은 입력이면 거의 같은 값이 나와야 한다.
+      // temperature 0 + topK 1 = 탐욕적(greedy) 디코딩으로 무작위성을 최대한 제거.
+      // (기본 temperature 1.0 → 조회할 때마다 가격이 크게 출렁이던 원인)
       generationConfig: {
-        temperature: 0.2,
-        topP: 0.85,
+        temperature: 0,
+        topP: 0.1,
+        topK: 1,
       },
     });
     // 각 모델 당 2회까지 (즉시 + 1초 후)
