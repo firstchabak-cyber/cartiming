@@ -9,6 +9,13 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { CarDiagram } from "@/components/vehicle/CarDiagram";
+import {
+  type DamageMap,
+  type DamageState,
+  nextDamageState,
+  NON_DEPRECIATING_PARTS,
+} from "@/lib/constants/damage";
 import {
   BODY_TYPES,
   BODY_TYPE_LABELS,
@@ -49,6 +56,7 @@ const schema = z.object({
     .regex(/^(\d{4}-\d{2}-\d{2})?$/, "YYYY-MM-DD")
     .optional(),
   seating_capacity: z.string().regex(/^\d*$/, "숫자만").optional(),
+  key_count: z.string().regex(/^\d*$/, "숫자만").optional(),
   extra_options_text: z.string().optional(),
   loan_principal: z.string().regex(/^\d*$/, "숫자만").optional(),
   loan_started_at: z
@@ -85,6 +93,9 @@ export type VehicleFormDefaults = {
   engine_code?: string | null;
   inspection_valid_until?: string | null;
   seating_capacity?: number | null;
+  key_count?: number | null;
+  wheel_scuff?: boolean | null;
+  damage_map?: Record<string, string> | null;
   options?: string[] | null;
   loan_principal?: number | null;
   loan_started_at?: string | null;
@@ -126,6 +137,29 @@ export function VehicleForm(props: Props) {
   );
   const [checkedOptions, setCheckedOptions] = useState<Set<string>>(initialOptions);
 
+  // 외판 상태 / 휠 / 키
+  const initialDamageMap: DamageMap =
+    v?.damage_map && typeof v.damage_map === "object"
+      ? (v.damage_map as DamageMap)
+      : {};
+  const [damageMap, setDamageMap] = useState<DamageMap>(initialDamageMap);
+  const [wheelScuff, setWheelScuff] = useState<boolean>(v?.wheel_scuff ?? false);
+  const [condOpen, setCondOpen] = useState(
+    Object.keys(initialDamageMap).length > 0 ||
+      (v?.wheel_scuff ?? false) ||
+      v?.key_count != null,
+  );
+
+  const handlePartClick = (part: string) => {
+    setDamageMap((prev) => {
+      const next: DamageState = nextDamageState(prev[part] ?? "없음");
+      const updated = { ...prev };
+      if (next === "없음") delete updated[part];
+      else updated[part] = next;
+      return updated;
+    });
+  };
+
   // 등록증 사진 업로드
   const [imageBusy, setImageBusy] = useState(false);
   const [imageMsg, setImageMsg] = useState<{
@@ -166,6 +200,7 @@ export function VehicleForm(props: Props) {
         v?.inspection_valid_until?.slice(0, 10) ?? "",
       seating_capacity:
         v?.seating_capacity != null ? String(v.seating_capacity) : "",
+      key_count: v?.key_count != null ? String(v.key_count) : "",
       extra_options_text: initialExtraOptions,
       loan_principal:
         v?.loan_principal != null ? String(v.loan_principal) : "",
@@ -349,6 +384,13 @@ export function VehicleForm(props: Props) {
         : isEdit
           ? null
           : undefined,
+      key_count: values.key_count
+        ? Number(values.key_count)
+        : isEdit
+          ? null
+          : undefined,
+      wheel_scuff: wheelScuff,
+      damage_map: damageMap,
       options:
         optionsCombined.length > 0
           ? optionsCombined
@@ -635,38 +677,141 @@ export function VehicleForm(props: Props) {
           onToggle={() => setOptOpen((v) => !v)}
         />
         {optOpen && (
-          <div className="flex flex-col gap-4 rounded-lg border border-border bg-background p-3">
-            {OPTION_GROUPS.map((g) => (
-              <div key={g.group} className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-muted">{g.group}</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {g.items.map((opt) => {
-                    const checked = checkedOptions.has(opt);
-                    return (
-                      <label
-                        key={opt}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-xs has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleOption(opt)}
-                          className="h-3.5 w-3.5 accent-primary"
-                        />
-                        <span className="select-none text-foreground">
-                          {opt}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground">
+                옵션 직접 작성
+              </label>
+              <p className="text-xs text-muted">
+                생각나는 옵션을 자유롭게 적어주세요. 쉼표(,)로 구분하면 됩니다.
+                아래 “자주 쓰는 옵션”에서 눌러 추가할 수도 있어요.
+              </p>
+              <textarea
+                rows={3}
+                placeholder="예) 파노라마 선루프, 나파가죽시트, 통풍시트, JBL 사운드, 디지털 키"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-base text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                {...register("extra_options_text")}
+              />
+            </div>
+
+            <details className="rounded-lg border border-border bg-surface">
+              <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">
+                자주 쓰는 옵션 빠른 선택 (눌러서 추가)
+              </summary>
+              <div className="flex flex-col gap-4 px-3 pb-3">
+                {OPTION_GROUPS.map((g) => (
+                  <div key={g.group} className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold text-muted">{g.group}</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {g.items.map((opt) => {
+                        const checked = checkedOptions.has(opt);
+                        return (
+                          <label
+                            key={opt}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-xs has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleOption(opt)}
+                              className="h-3.5 w-3.5 accent-primary"
+                            />
+                            <span className="select-none text-foreground">
+                              {opt}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-            <Input
-              label="기타 옵션 (쉼표로 구분)"
-              placeholder="예) JBL 사운드, 디지털 키"
-              {...register("extra_options_text")}
+            </details>
+          </div>
+        )}
+
+        {/* 외판 상태 · 휠 · 키 */}
+        <CollapsibleHeader
+          label="외판 상태 · 휠 · 키 (선택)"
+          open={condOpen}
+          onToggle={() => setCondOpen((c) => !c)}
+        />
+        {condOpen && (
+          <div className="flex flex-col gap-4 rounded-lg border border-border bg-background p-3">
+            <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs">
+              <p className="font-semibold text-foreground">외판 상태 입력 안내</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted">
+                <li>도면에서 부위를 누를 때마다 이상없음 → 판금 → 교환 순서로 바뀝니다.</li>
+                <li>앞·뒤 범퍼와 휠은 표시해도 시세 감가에 반영되지 않습니다.</li>
+                <li>수리 완료된 상태로 입력하세요. 미수리면 시세분석에서 추가 감가됩니다.</li>
+              </ul>
+            </div>
+
+            <CarDiagram
+              mode="damageMap"
+              damageMap={damageMap}
+              onPartClick={handlePartClick}
             />
+
+            {(() => {
+              const entries = Object.entries(damageMap).filter(
+                ([, s]) => s && s !== "없음",
+              );
+              if (entries.length === 0) {
+                return (
+                  <p className="text-xs text-muted">
+                    현재 모든 부위가 이상 없음입니다. 사고·수리 부위가 있으면
+                    도면에서 눌러 표시하세요.
+                  </p>
+                );
+              }
+              return (
+                <ul className="flex flex-wrap gap-1">
+                  {entries.map(([part, state]) => (
+                    <li
+                      key={part}
+                      className={
+                        NON_DEPRECIATING_PARTS.has(part)
+                          ? "rounded-full bg-background px-2 py-0.5 text-xs text-muted"
+                          : state === "교환"
+                            ? "rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger"
+                            : "rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning"
+                      }
+                    >
+                      {part} · {state}
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+              <input
+                type="checkbox"
+                checked={wheelScuff}
+                onChange={(e) => setWheelScuff(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="select-none text-foreground">
+                휠에 기스(스크래치)가 있어요
+              </span>
+            </label>
+
+            <SelectField
+              label="자동차키(스마트키) 갯수"
+              {...register("key_count")}
+              options={[
+                { value: "", label: "선택 안 함" },
+                { value: "1", label: "1개" },
+                { value: "2", label: "2개" },
+                { value: "3", label: "3개" },
+                { value: "4", label: "4개 이상" },
+              ]}
+            />
+            <p className="-mt-2 text-[11px] text-muted">
+              💡 스마트키가 1개뿐이면 매수자가 키 추가 제작비(보통 10~30만원)를
+              감안할 수 있어요. 2개면 시세에 유리합니다.
+            </p>
           </div>
         )}
 

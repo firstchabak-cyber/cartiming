@@ -18,6 +18,8 @@ export type VehicleForPrompt = {
   vehicle_class: string | null;
   options: string[] | null;
   damage_map: Record<string, string> | null;
+  wheel_scuff: boolean | null;
+  key_count: number | null;
   // 추가 식별/감가 영향 필드
   plate_number: string | null;
   color: string | null;
@@ -332,6 +334,16 @@ ${loan ? "- 대출 잔액이 있는 차량입니다. 시점별 잔액과 대조�
 - 차대번호: ${vehicle.vin ?? "정보 없음"}
 ${plateLine}
 - 추가 옵션: ${optionList}
+- 자동차키(스마트키) 갯수: ${
+    vehicle.key_count != null
+      ? `${vehicle.key_count}개${
+          vehicle.key_count <= 1
+            ? " (1개뿐 — 매수자가 키 추가제작비 10~30만원을 시세에서 차감 요청할 수 있음)"
+            : " (2개 이상 — 정상, 감가 없음)"
+        }`
+      : "정보 없음"
+  }
+- 휠 기스(스크래치): ${vehicle.wheel_scuff ? "있음 (휠은 감가 미반영 소모품 — 시세 영향 거의 없음)" : "없음/정보 없음"}
 
 ${damageSection}
 

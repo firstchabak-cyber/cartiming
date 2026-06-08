@@ -55,6 +55,8 @@ const patchSchema = z
       .nullable()
       .optional(),
     seating_capacity: z.number().int().gte(1).lte(60).nullable().optional(),
+    key_count: z.number().int().gte(0).lte(10).nullable().optional(),
+    wheel_scuff: z.boolean().optional(),
     options: z.array(z.string().trim().min(1)).nullable().optional(),
     purchase_price: z.number().int().nonnegative().nullable().optional(),
     loan_principal: z.number().int().nonnegative().nullable().optional(),

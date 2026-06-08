@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getVehicleSlots, spendCredits } from "@/lib/credits/server";
 import { CREDIT_COSTS } from "@/lib/credits/constants";
+import { CAR_BODY_PARTS, DAMAGE_STATES } from "@/lib/constants/damage";
 
 const vehicleSchema = z.object({
   manufacturer: z.string().trim().min(1, "제조사를 입력해주세요"),
@@ -47,6 +48,14 @@ const vehicleSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   seating_capacity: z.number().int().gte(1).lte(60).optional(),
+  key_count: z.number().int().gte(0).lte(10).nullable().optional(),
+  wheel_scuff: z.boolean().optional(),
+  damage_map: z
+    .record(
+      z.enum(CAR_BODY_PARTS as unknown as [string, ...string[]]),
+      z.enum(DAMAGE_STATES as unknown as [string, ...string[]]),
+    )
+    .optional(),
   options: z.array(z.string().trim().min(1)).optional(),
   purchase_price: z.number().int().nonnegative().optional(),
   loan_principal: z.number().int().nonnegative().optional(),
@@ -134,6 +143,9 @@ export async function POST(request: Request) {
       engine_code: input.engine_code ?? null,
       inspection_valid_until: input.inspection_valid_until ?? null,
       seating_capacity: input.seating_capacity ?? null,
+      key_count: input.key_count ?? null,
+      wheel_scuff: input.wheel_scuff ?? false,
+      damage_map: input.damage_map ?? {},
       options: input.options && input.options.length > 0 ? input.options : null,
       purchase_price: input.purchase_price ?? null,
       loan_principal: input.loan_principal ?? null,
