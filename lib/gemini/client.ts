@@ -12,18 +12,20 @@ function getClient() {
   return cached;
 }
 
-// 텍스트 분석용 모델 폴백 순서 (앞쪽이 우선)
+// 텍스트 분석용 모델 폴백 순서 (앞쪽이 우선).
+// 주력은 검증된 2.5-flash(시세 기준 일관), 과부하 시에만 폴백.
+// gemini-2.0-flash·1.5-flash 는 구글이 폐기(404)해서 제거. 2025-06 기준 작동 확인 모델만.
 const TEXT_MODELS = [
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-3.5-flash",
+  "gemini-2.5-flash-lite",
 ];
 
 // 비전(이미지) 분석용 모델 폴백 순서
 const VISION_MODELS = [
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-3.5-flash",
+  "gemini-2.5-flash-lite",
 ];
 
 /**
