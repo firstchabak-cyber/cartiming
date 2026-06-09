@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   monitoring: "민감 모니터링 (7일)",
   precision_report: "정밀 분석 보고서",
   referral: "친구 초대 보상",
+  review: "시세 후기 보상",
   admin_grant: "관리자 지급",
   admin_revoke: "관리자 회수",
   refund: "환불",

@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { Plus, TrendingUp, Bell, Car, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  TrendingUp,
+  Bell,
+  Car,
+  ChevronRight,
+  MessageSquare,
+} from "lucide-react";
 import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
@@ -118,6 +125,21 @@ export default async function DashboardPage() {
           </Card>
         </Link>
       </section>
+
+      <Link href="/reviews">
+        <Card className="flex items-center justify-between gap-3 transition-colors hover:bg-surface">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle className="text-sm">시세 분석 후기</CardTitle>
+              <CardDescription>
+                다른 회원들의 실제 후기 보기 · 내 후기 쓰고 200캐시 받기
+              </CardDescription>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted" />
+        </Card>
+      </Link>
 
       {dealer && (
         <Link href="/dealer/listings">

@@ -16,12 +16,14 @@ import {
   Megaphone,
   Mail,
   Banknote,
+  MessageSquare,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/admin/waitlist", label: "출시 알림 신청", icon: Mail },
   { href: "/admin/deposits", label: "캐시 충전 승인", icon: Banknote },
+  { href: "/admin/reviews", label: "시세 후기 관리", icon: MessageSquare },
   { href: "/admin/analyses", label: "분석 모니터링", icon: Activity },
   { href: "/admin/sales", label: "매각 신청", icon: ShoppingBag },
   { href: "/admin/wanted", label: "구매요청 승인", icon: Search },

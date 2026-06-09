@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils/cn";
 import { notifyCreditsChanged } from "@/lib/credits/events";
 import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
 import { ExternalQuotesPanel } from "./ExternalQuotesPanel";
+import { ReviewButton } from "@/components/reviews/ReviewButton";
 
 type VehicleOption = {
   id: string;
@@ -317,6 +318,19 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
                   vehicle={vehicles.find((v) => v.id === selectedId) ?? null}
                   result={result}
                 />
+                {(() => {
+                  const v = vehicles.find((veh) => veh.id === selectedId);
+                  if (!v) return null;
+                  const summary = `${v.manufacturer} ${v.model}${v.trim ? " " + v.trim : ""} · ${v.year}년식 · ${v.mileage.toLocaleString("ko-KR")}km`;
+                  return (
+                    <ReviewButton
+                      vehicleId={v.id}
+                      carSummary={summary}
+                      currentPrice={result.current_price}
+                      signalLabel={SIGNAL_META[result.signal].label}
+                    />
+                  );
+                })()}
               </div>
             </div>
             <div className="flex flex-col gap-1">

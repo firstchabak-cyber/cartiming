@@ -16,6 +16,7 @@ export default async function AdminDashboard() {
     transactions,
     waitlist,
     depositsPending,
+    reviewsPending,
   ] = await Promise.all([
     admin.from("user_credits").select("user_id", { count: "exact", head: true }),
     admin
@@ -36,6 +37,10 @@ export default async function AdminDashboard() {
     admin.from("waitlist").select("id", { count: "exact", head: true }),
     admin
       .from("deposit_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    admin
+      .from("analysis_reviews")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
   ]);
@@ -83,6 +88,12 @@ export default async function AdminDashboard() {
       href: "/admin/deposits",
       tone: "text-danger",
     },
+    {
+      label: "후기 승인 대기",
+      value: reviewsPending.count ?? 0,
+      href: "/admin/reviews",
+      tone: "text-warning",
+    },
   ];
 
   return (
@@ -123,6 +134,14 @@ export default async function AdminDashboard() {
                 className="block rounded-lg px-2 py-1.5 hover:bg-surface"
               >
                 💰 캐시 충전 승인 ({depositsPending.count ?? 0}건)
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/reviews"
+                className="block rounded-lg px-2 py-1.5 hover:bg-surface"
+              >
+                💬 시세 후기 승인 ({reviewsPending.count ?? 0}건)
               </Link>
             </li>
             <li>
