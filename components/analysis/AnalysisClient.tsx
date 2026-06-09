@@ -273,8 +273,9 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
           {loading ? "분석 중..." : "🔄 다시 분석"}
         </Button>
         <p className="text-xs text-muted">
-          차량 정보가 그대로면 다시 분석해도 같은 결과를 무료로 바로 보여드려요.
-          주행거리·옵션·외판 상태 등을 수정하면 새로 분석합니다. 새 분석은 가입 후{" "}
+          <strong>AI 시세 분석 요청</strong>은 차량 정보가 그대로면 이전 결과를
+          무료로 바로 보여드려요. <strong>🔄 다시 분석</strong>은 최신 기준으로 새로
+          분석합니다(분석 1회로 처리). 새 분석은 가입 후{" "}
           {FREE_ANALYSIS_PER_MONTH}회 무료, 이후 1회당{" "}
           {CREDIT_COSTS.analysisOverage} 캐시예요. (시세의 시간 변화는 매월 1일
           자동 분석이 반영합니다.)

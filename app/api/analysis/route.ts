@@ -101,7 +101,9 @@ export async function POST(request: Request) {
   //  - 입력값이 바뀌었으면 → 아래에서 새로 분석.
   //  (시세의 '시간에 따른 변화'는 매월 1일 자동분석이 반영한다.)
   const inputHash = computeInputHash(vehicle as VehicleForPrompt, records);
-  {
+  // force=true("다시 분석")면 캐시를 건너뛰고 무조건 새로 분석한다.
+  // (force가 없을 때만 입력값 지문이 같으면 직전 결과 무료 재사용)
+  if (!parsed.data.force) {
     const { data: cached } = await supabase
       .from("price_analyses")
       .select(
