@@ -23,6 +23,14 @@ function LoginPageInner() {
   return (
     <Container className="flex min-h-screen flex-col justify-center gap-8 py-12">
       <header className="text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icons/icon-192.png"
+          alt={APP_NAME}
+          width={72}
+          height={72}
+          className="mx-auto mb-3 rounded-2xl shadow-card"
+        />
         <h1 className="text-3xl font-bold text-primary">{APP_NAME}</h1>
         <p className="mt-3 whitespace-pre-line text-base text-muted">
           내 차의 매각 적기를{"\n"}알려드립니다

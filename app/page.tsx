@@ -18,6 +18,14 @@ export default async function LandingPage() {
     <div className="flex min-h-screen flex-col">
       <Container className="flex flex-1 flex-col justify-between py-16">
         <header className="flex flex-col items-center gap-3 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/icon-192.png"
+            alt={APP_NAME}
+            width={72}
+            height={72}
+            className="rounded-2xl shadow-card"
+          />
           <p className="text-sm font-semibold text-primary">CarTiming</p>
           <h1 className="text-4xl font-bold leading-tight text-foreground">
             {APP_NAME}

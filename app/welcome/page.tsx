@@ -44,6 +44,14 @@ export default function WelcomeLandingPage() {
       <Container className="flex flex-1 flex-col gap-12 py-14">
         {/* 히어로 */}
         <header className="flex flex-col items-center gap-4 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/icon-192.png"
+            alt={APP_NAME}
+            width={72}
+            height={72}
+            className="rounded-2xl shadow-card"
+          />
           <p className="text-sm font-semibold text-primary">{APP_NAME}</p>
           <h1 className="text-3xl font-bold leading-snug text-foreground sm:text-4xl">
             내 차, 언제 팔아야
