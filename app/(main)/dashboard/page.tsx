@@ -120,8 +120,8 @@ export default async function DashboardPage() {
         <Link href="/notifications">
           <Card className="flex h-full flex-col gap-2 transition-colors hover:bg-surface">
             <Bell className="h-5 w-5 text-warning" />
-            <CardTitle className="text-sm">매각 알림</CardTitle>
-            <CardDescription>적정 시점 알림 · 켜기 →</CardDescription>
+            <CardTitle className="text-sm">자동 매각 감시</CardTitle>
+            <CardDescription>매월 자동분석 · 팔 때 먼저 알림 →</CardDescription>
           </Card>
         </Link>
       </section>

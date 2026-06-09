@@ -10,8 +10,8 @@ export const SIGNUP_BONUS = 2000;
 export const REFERRAL_REWARD = 1000;
 /** 시세분석 후기가 승인되면 지급되는 캐시 (차량 1대당 1회) */
 export const REVIEW_REWARD = 200;
-/** 휴대폰 푸시 알림을 처음 켤 때 1회 차감되는 캐시 */
-export const NOTIFICATION_ENABLE_COST = 500;
+/** 자동 매각 감시(매월 자동분석 + 이메일 알림)를 처음 켤 때 1회 차감되는 캐시 */
+export const NOTIFICATION_ENABLE_COST = 1000;
 
 // 매각 후 슬롯 회복 유효 기간 (개월)
 export const SOLD_SLOT_RECOVERY_MONTHS = 3;

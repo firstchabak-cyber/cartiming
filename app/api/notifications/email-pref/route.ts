@@ -22,9 +22,9 @@ async function sendWelcomeEmail(
       .maybeSingle();
     const to = profile?.email as string | undefined;
     if (!to) return;
-    const title = "이메일 알림이 켜졌어요 🔔";
+    const title = "자동 매각 감시가 켜졌어요 🔔";
     const message =
-      "이제 매각 적기·시세 변동 같은 중요한 소식을 이 이메일로 보내드려요.\n내 차의 가장 좋은 매각 타이밍을 놓치지 마세요!";
+      "이제 매월 자동으로 내 차 시세를 분석해, 매각 적기·시세 변동이 생기면 이 이메일로 먼저 알려드려요.\n내 차의 가장 좋은 매각 타이밍을 놓치지 마세요!";
     await sendEmail({
       to,
       subject: `[카타임] ${title}`,

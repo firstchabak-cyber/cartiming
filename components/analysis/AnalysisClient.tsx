@@ -278,8 +278,8 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
           무료로 바로 보여드려요. <strong>🔄 다시 분석</strong>은 최신 기준으로 새로
           분석합니다(분석 1회로 처리). 새 분석은 가입 후{" "}
           {FREE_ANALYSIS_PER_MONTH}회 무료, 이후 1회당{" "}
-          {CREDIT_COSTS.analysisOverage} 캐시예요. (시세의 시간 변화는 매월 1일
-          자동 분석이 반영합니다.)
+          {CREDIT_COSTS.analysisOverage} 캐시예요. (자동 매각 감시를 켜면 매월
+          자동 분석으로 시세 변화가 반영돼요.)
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
       </Card>
@@ -692,7 +692,7 @@ function ShareButton({
     lines.push("🤖 내 차 시세, AI 가 분석해주는 카타임");
     lines.push("✅ 차량번호·등록증 사진만 있으면 1분 분석");
     lines.push("✅ 헤이딜러 견적 수준의 업자 매입가 추정");
-    lines.push("✅ 매각 적기 자동 알림 (무료)");
+    lines.push("✅ 매월 자동 분석으로 매각 적기 먼저 알림");
     lines.push("");
     lines.push("👉 무료 시작: https://cartiming.app");
     return lines.join("\n");

@@ -3,7 +3,8 @@ import { APP_URL } from "@/lib/constants/app";
 import "./globals.css";
 
 const TITLE = "카타임 | 내 차의 적정 매각 시점";
-const DESCRIPTION = "AI가 분석하는 내 차의 현재·미래 시세와 매각 적기 알림 서비스";
+const DESCRIPTION =
+  "AI가 매월 자동으로 분석하는 내 차의 현재·미래 시세와 매각 적기 알림 서비스";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

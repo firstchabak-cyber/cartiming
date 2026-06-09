@@ -8,7 +8,11 @@ import {
   getFreeAnalysisRemaining,
   getVehicleSlots,
 } from "@/lib/credits/server";
-import { CREDIT_COSTS, FREE_ANALYSIS_PER_MONTH } from "@/lib/credits/constants";
+import {
+  CREDIT_COSTS,
+  FREE_ANALYSIS_PER_MONTH,
+  NOTIFICATION_ENABLE_COST,
+} from "@/lib/credits/constants";
 import { formatDate } from "@/lib/utils/format";
 import { APP_URL } from "@/lib/constants/app";
 import { ReferralCard } from "@/components/profile/ReferralCard";
@@ -100,8 +104,12 @@ export default async function CreditsPage() {
             </span>
           </li>
           <li className="flex items-center justify-between py-2">
-            <span className="text-foreground">이메일 알림 켜기 (최초 1회)</span>
-            <span className="font-semibold text-foreground">500 캐시</span>
+            <span className="text-foreground">
+              자동 매각 감시 켜기 (매월 자동분석+알림, 최초 1회)
+            </span>
+            <span className="font-semibold text-foreground">
+              {NOTIFICATION_ENABLE_COST.toLocaleString("ko-KR")} 캐시
+            </span>
           </li>
         </ul>
         <div className="rounded-lg bg-success/10 px-3 py-2 text-[11px] leading-relaxed text-success">

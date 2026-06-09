@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Mail } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/Card";
+import { NOTIFICATION_ENABLE_COST } from "@/lib/credits/constants";
 
-const ENABLE_COST = 500;
+const ENABLE_COST = NOTIFICATION_ENABLE_COST;
 
 export function NotificationSettings() {
   // 서버에 저장된 현재 수신 여부
@@ -84,9 +85,10 @@ export function NotificationSettings() {
     <Card className="flex flex-col gap-3">
       {/* 1) 제목 + 설명 */}
       <div>
-        <CardTitle className="text-sm">알림 설정</CardTitle>
+        <CardTitle className="text-sm">자동 매각 감시</CardTitle>
         <p className="mt-1 text-[11px] text-muted">
-          매각 적기·시세 변동 같은 중요 알림을 가입하신 이메일로 보내드려요.
+          켜두면 <b>매월 자동으로 내 차 시세를 분석</b>해, 매각 적기·시세 변동이
+          생기면 이메일로 <b>먼저</b> 알려드려요. (켜지 않으면 직접 분석할 때만 확인)
         </p>
       </div>
 
@@ -101,10 +103,10 @@ export function NotificationSettings() {
         />
         <span className="flex items-center gap-1.5 text-sm text-foreground">
           <Mail className="h-4 w-4 text-primary" />
-          매각 적기·시세 변동 이메일 알림 받기
+          매월 자동 분석 + 매각 적기·시세변동 알림 받기
           {!alreadyPaid && (
             <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-              최초 {ENABLE_COST}캐시
+              최초 {ENABLE_COST.toLocaleString("ko-KR")}캐시
             </span>
           )}
         </span>

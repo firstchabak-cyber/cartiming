@@ -490,8 +490,8 @@ export default async function VehicleDetailPage({
             })}
           </ul>
           <p className="text-[11px] text-muted">
-            매월 1일 자동 분석 + 직접 분석할 때마다 기록이 쌓입니다. 변동률은 직전
-            기록 대비입니다.
+            자동 매각 감시를 켜면 매월 자동 분석이, 직접 분석할 때마다 기록이
+            쌓입니다. 변동률은 직전 기록 대비입니다.
           </p>
         </Card>
       )}
