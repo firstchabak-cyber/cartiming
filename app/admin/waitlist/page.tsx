@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { Card, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { WaitlistBroadcast } from "@/components/admin/WaitlistBroadcast";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,9 @@ export default async function AdminWaitlistPage() {
           </p>
         </Card>
       </div>
+
+      {/* 토스 출시 등 소식을 신청자 전체에게 일괄 발송 */}
+      <WaitlistBroadcast total={total} />
 
       {list.length === 0 ? (
         <Card className="py-10 text-center">
