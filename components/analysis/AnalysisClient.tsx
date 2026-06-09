@@ -15,6 +15,7 @@ import {
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { CarLoader } from "@/components/ui/CarLoader";
 import { formatKRW } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { notifyCreditsChanged } from "@/lib/credits/events";
@@ -273,6 +274,23 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
       </Card>
+
+      {loading && (
+        <Card className="flex flex-col items-center gap-1 py-8">
+          <CarLoader
+            messages={[
+              "🔍 차량 정보를 읽고 있어요",
+              "📊 비슷한 실거래 매물을 비교하고 있어요",
+              "📈 시세 흐름을 계산하고 있어요",
+              "🧮 대출·순수령액을 반영하고 있어요",
+              "✍️ 매각 권고를 정리하고 있어요",
+            ]}
+          />
+          <p className="mt-2 text-xs text-muted">
+            보통 10~20초 정도 걸려요. 잠시만 기다려 주세요.
+          </p>
+        </Card>
+      )}
 
       {selectedId && (
         <ExternalQuotesPanel vehicleId={selectedId} />

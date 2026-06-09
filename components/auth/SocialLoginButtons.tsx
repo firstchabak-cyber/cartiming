@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SocialLoginButton } from "./SocialLoginButton";
+import { CarLoaderOverlay } from "@/components/ui/CarLoader";
 import { createClient } from "@/lib/supabase/client";
 
 export function SocialLoginButtons({ next }: { next?: string | null }) {
@@ -31,6 +32,16 @@ export function SocialLoginButtons({ next }: { next?: string | null }) {
 
   return (
     <div className="flex w-full flex-col gap-3">
+      <CarLoaderOverlay
+        show={pending !== null}
+        title="로그인 중…"
+        messages={[
+          pending === "naver"
+            ? "🟢 네이버로 로그인하고 있어요"
+            : "🔵 구글로 로그인하고 있어요",
+          "🚗 잠시만 기다려 주세요",
+        ]}
+      />
       <SocialLoginButton
         provider="naver"
         onClick={loginWithNaver}

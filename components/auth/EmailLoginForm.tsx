@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { CarLoaderOverlay } from "@/components/ui/CarLoader";
 import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
@@ -25,6 +26,8 @@ export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
   const router = useRouter();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
+  // 로그인 성공 후 페이지 이동이 끝날 때까지 오버레이를 유지하기 위한 상태
+  const [navigating, setNavigating] = useState(false);
 
   const {
     register,
@@ -55,6 +58,7 @@ export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
         return;
       }
       if (data.session) {
+        setNavigating(true);
         router.replace(destination);
         router.refresh();
         return;
@@ -71,12 +75,22 @@ export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
       setErrorMsg("로그인에 실패했습니다. 이메일/비밀번호를 확인해주세요.");
       return;
     }
+    setNavigating(true);
     router.replace(destination);
     router.refresh();
   });
 
   return (
     <form onSubmit={onSubmit} className="flex w-full flex-col gap-3">
+      <CarLoaderOverlay
+        show={isSubmitting || navigating}
+        title={mode === "login" ? "로그인 중…" : "가입 중…"}
+        messages={
+          mode === "login"
+            ? ["🔐 로그인하고 있어요", "🚗 잠시만 기다려 주세요"]
+            : ["📝 계정을 만들고 있어요", "🚗 잠시만 기다려 주세요"]
+        }
+      />
       <Input
         label="이메일"
         type="email"
