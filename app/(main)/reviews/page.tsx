@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatKRW } from "@/lib/utils/format";
+import { WriteReviewLauncher } from "@/components/reviews/WriteReviewLauncher";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,8 @@ export default async function ReviewsPage() {
           카타임으로 내 차 시세를 분석한 회원들의 실제 후기예요.
         </p>
       </header>
+
+      <WriteReviewLauncher />
 
       {list.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 py-10 text-center">
