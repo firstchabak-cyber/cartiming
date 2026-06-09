@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DeleteVehicleButton } from "@/components/vehicle/DeleteVehicleButton";
 import { MarkAsSoldButton } from "@/components/vehicle/MarkAsSoldButton";
+import { AutoWatchToggle } from "@/components/vehicle/AutoWatchToggle";
 import { RestoreVehicleButton } from "@/components/vehicle/RestoreVehicleButton";
 import { ExternalSaleButton } from "@/components/sale/ExternalSaleButton";
 import { PhotoGallery } from "@/components/vehicle/PhotoGallery";
@@ -51,7 +52,7 @@ export default async function VehicleDetailPage({
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff_count, msrp, options, status, sold_at, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, fuel_type, transmission, color, interior_color, plate_number, registered_at, vin, displacement_cc, body_type, vehicle_class, engine_code, inspection_valid_until, seating_capacity, key_count, wheel_scuff_count, msrp, options, status, sold_at, auto_watch, auto_watch_paid, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
@@ -163,6 +164,14 @@ export default async function VehicleDetailPage({
           />
         </div>
       </header>
+
+      {!isSold && (
+        <AutoWatchToggle
+          vehicleId={vehicle.id}
+          initialOn={vehicle.auto_watch === true}
+          initialPaid={vehicle.auto_watch_paid === true}
+        />
+      )}
 
       {!isSold && activeSale && (
         <Card className="flex flex-col gap-2 border-primary/40 bg-primary/5">

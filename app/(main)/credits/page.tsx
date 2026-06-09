@@ -105,7 +105,7 @@ export default async function CreditsPage() {
           </li>
           <li className="flex items-center justify-between py-2">
             <span className="text-foreground">
-              자동 매각 감시 켜기 (매월 자동분석+알림, 최초 1회)
+              자동 매각 감시 (차량 1대당 매월 자동분석+알림, 최초 1회)
             </span>
             <span className="font-semibold text-foreground">
               {NOTIFICATION_ENABLE_COST.toLocaleString("ko-KR")} 캐시

@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const { data: vehicle, error: vehicleError } = await supabase
     .from("vehicles")
     .select(
-      "id, manufacturer, model, trim, year, mileage, purchase_price, msrp, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, status, loan_principal, loan_started_at, loan_months, loan_apr",
+      "id, manufacturer, model, trim, year, mileage, purchase_price, msrp, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, status, auto_watch, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("id", parsed.data.vehicleId)
     .eq("user_id", user.id)
@@ -381,7 +381,8 @@ export async function POST(request: Request) {
       // 같은 차종을 여러 대 가진 경우 구분되도록 차량번호를 앞에 표기
       title: `${plate ? `[${plate}] ` : ""}${vehicle.manufacturer} ${vehicle.model} 매각 적기`,
       message: `${plate ? `차량번호 ${plate}\n` : ""}현재 시세 ${analysis.current_price.toLocaleString("ko-KR")}원. ${analysis.rationale}`,
-      email: true, // 매각 적기는 중요 → 이메일도 발송
+      // 이메일은 '자동 감시(유료)'를 켠 차량에만 — 인앱 알림은 항상 기록됨
+      email: (vehicle as { auto_watch?: boolean }).auto_watch === true,
     });
   }
 

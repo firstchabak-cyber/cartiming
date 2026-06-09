@@ -172,32 +172,25 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  // 자동 매각 감시는 '알림(이메일 알림)을 켠' 유료 사용자만 받는다.
-  // 무료 사용자는 직접 분석만 — 자동분석/자동알림 대상에서 제외(가치 차별화 + AI 비용 절감).
-  const { data: optedRows } = await admin
-    .from("user_credits")
-    .select("user_id")
-    .eq("email_notifications", true);
-  const optedIds = ((optedRows as Array<{ user_id: string }>) ?? []).map(
-    (r) => r.user_id,
-  );
-  if (optedIds.length === 0) {
-    return NextResponse.json({
-      ranAt: new Date().toISOString(),
-      total: 0,
-      succeeded: 0,
-      failed: 0,
-      note: "자동 감시를 켠 사용자가 없습니다",
-    });
-  }
-
+  // 자동 매각 감시는 '차량별'로 켠 차량만 대상 (auto_watch=true).
+  // 무료(감시 끈) 차량은 직접 분석만 — 자동분석/자동알림 제외(가치 차별화 + AI 비용 절감).
   const { data: vehicles, error } = await admin
     .from("vehicles")
     .select(
       "id, user_id, manufacturer, model, trim, year, mileage, purchase_price, msrp, fuel_type, transmission, displacement_cc, body_type, vehicle_class, options, damage_map, wheel_scuff_count, key_count, damage_note, plate_number, color, interior_color, registered_at, vin, engine_code, seating_capacity, loan_principal, loan_started_at, loan_months, loan_apr",
     )
     .eq("status", "active")
-    .in("user_id", optedIds);
+    .eq("auto_watch", true);
+
+  if (!error && (vehicles ?? []).length === 0) {
+    return NextResponse.json({
+      ranAt: new Date().toISOString(),
+      total: 0,
+      succeeded: 0,
+      failed: 0,
+      note: "자동 감시를 켠 차량이 없습니다",
+    });
+  }
 
   if (error) {
     return NextResponse.json(

@@ -15,6 +15,7 @@ type VehicleRow = {
   plate_number: string | null;
   status: string | null;
   sold_at: string | null;
+  auto_watch: boolean | null;
 };
 
 export default async function GaragePage() {
@@ -27,7 +28,7 @@ export default async function GaragePage() {
     ? await supabase
         .from("vehicles")
         .select(
-          "id, manufacturer, model, year, mileage, trim, plate_number, status, sold_at",
+          "id, manufacturer, model, year, mileage, trim, plate_number, status, sold_at, auto_watch",
         )
         .eq("user_id", user.id)
         .neq("status", "deleted")
@@ -118,6 +119,11 @@ function VehicleRowCard({ v, muted }: { v: VehicleRow; muted?: boolean }) {
             {v.year}년식 · {formatMileage(v.mileage)}
             {muted && v.sold_at ? ` · 매각 ${formatDate(v.sold_at)}` : ""}
           </CardDescription>
+          {!muted && v.auto_watch && (
+            <span className="self-start rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              🔔 자동 감시중
+            </span>
+          )}
         </div>
         <ChevronRight className="h-5 w-5 text-muted" />
       </Card>
