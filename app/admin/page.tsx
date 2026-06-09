@@ -8,25 +8,32 @@ export default async function AdminDashboard() {
   const admin = createAdminClient();
 
   // 병렬 카운트
-  const [users, vehicles, salesPending, dealersPending, transactions] =
-    await Promise.all([
-      admin.from("user_credits").select("user_id", { count: "exact", head: true }),
-      admin
-        .from("vehicles")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active"),
-      admin
-        .from("sale_requests")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["pending", "bidding"]),
-      admin
-        .from("dealers")
-        .select("user_id", { count: "exact", head: true })
-        .eq("verified", false),
-      admin
-        .from("sale_transactions")
-        .select("id", { count: "exact", head: true }),
-    ]);
+  const [
+    users,
+    vehicles,
+    salesPending,
+    dealersPending,
+    transactions,
+    waitlist,
+  ] = await Promise.all([
+    admin.from("user_credits").select("user_id", { count: "exact", head: true }),
+    admin
+      .from("vehicles")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    admin
+      .from("sale_requests")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["pending", "bidding"]),
+    admin
+      .from("dealers")
+      .select("user_id", { count: "exact", head: true })
+      .eq("verified", false),
+    admin
+      .from("sale_transactions")
+      .select("id", { count: "exact", head: true }),
+    admin.from("waitlist").select("id", { count: "exact", head: true }),
+  ]);
 
   const stats = [
     {
@@ -59,6 +66,12 @@ export default async function AdminDashboard() {
       href: "/admin/transactions",
       tone: "text-success",
     },
+    {
+      label: "출시 알림 신청",
+      value: waitlist.count ?? 0,
+      href: "/admin/waitlist",
+      tone: "text-primary",
+    },
   ];
 
   return (
@@ -68,7 +81,7 @@ export default async function AdminDashboard() {
         <p className="text-sm text-muted">전체 현황 한눈에 보기</p>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {stats.map((s) => (
           <Link key={s.label} href={s.href}>
             <Card className="flex flex-col gap-1 transition-colors hover:bg-surface">

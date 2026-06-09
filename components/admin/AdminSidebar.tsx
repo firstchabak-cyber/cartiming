@@ -14,10 +14,12 @@ import {
   Search,
   Trash2,
   Megaphone,
+  Mail,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
+  { href: "/admin/waitlist", label: "출시 알림 신청", icon: Mail },
   { href: "/admin/analyses", label: "분석 모니터링", icon: Activity },
   { href: "/admin/sales", label: "매각 신청", icon: ShoppingBag },
   { href: "/admin/wanted", label: "구매요청 승인", icon: Search },
