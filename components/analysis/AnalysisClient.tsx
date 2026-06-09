@@ -222,7 +222,14 @@ export function AnalysisClient({ vehicles }: { vehicles: VehicleOption[] }) {
               <li key={v.id}>
                 <button
                   type="button"
-                  onClick={() => setSelectedId(v.id)}
+                  onClick={() => {
+                    if (v.id === selectedId) return;
+                    // 다른 차량으로 바꾸면 이전 차량의 분석 결과·오류를 즉시 비운다.
+                    // (안 비우면 새 차량을 선택해도 화면엔 직전 차 시세가 남아 "다른 차 시세가 나온다"처럼 보임)
+                    setSelectedId(v.id);
+                    setResult(null);
+                    setError(null);
+                  }}
                   className={cn(
                     "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition-colors",
                     active
