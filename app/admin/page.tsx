@@ -15,6 +15,7 @@ export default async function AdminDashboard() {
     dealersPending,
     transactions,
     waitlist,
+    depositsPending,
   ] = await Promise.all([
     admin.from("user_credits").select("user_id", { count: "exact", head: true }),
     admin
@@ -33,6 +34,10 @@ export default async function AdminDashboard() {
       .from("sale_transactions")
       .select("id", { count: "exact", head: true }),
     admin.from("waitlist").select("id", { count: "exact", head: true }),
+    admin
+      .from("deposit_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
   ]);
 
   const stats = [
@@ -72,6 +77,12 @@ export default async function AdminDashboard() {
       href: "/admin/waitlist",
       tone: "text-primary",
     },
+    {
+      label: "입금 승인 대기",
+      value: depositsPending.count ?? 0,
+      href: "/admin/deposits",
+      tone: "text-danger",
+    },
   ];
 
   return (
@@ -104,6 +115,14 @@ export default async function AdminDashboard() {
                 className="block rounded-lg px-2 py-1.5 hover:bg-surface"
               >
                 📋 매각 신청 처리 ({salesPending.count ?? 0}건)
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/deposits"
+                className="block rounded-lg px-2 py-1.5 hover:bg-surface"
+              >
+                💰 캐시 충전 승인 ({depositsPending.count ?? 0}건)
               </Link>
             </li>
             <li>

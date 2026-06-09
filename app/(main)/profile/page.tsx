@@ -14,6 +14,7 @@ import { isAdmin } from "@/lib/admin/check";
 import { APP_URL } from "@/lib/constants/app";
 import { ReferralCard } from "@/components/profile/ReferralCard";
 import { NotificationSettings } from "@/components/notifications/NotificationSettings";
+import { DepositStatusList } from "@/components/credits/DepositStatusList";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -143,6 +144,8 @@ export default function ProfilePage() {
           </div>
         )}
       </Card>
+
+      <DepositStatusList />
 
       <NotificationSettings />
 
