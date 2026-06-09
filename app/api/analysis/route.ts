@@ -373,12 +373,14 @@ export async function POST(request: Request) {
   if (analysis.signal === "sell_now") {
     const { createAdminClient } = await import("@/lib/supabase/server");
     const { createAndDispatch } = await import("@/lib/notify/dispatch");
+    const plate = (vehicle as { plate_number?: string | null }).plate_number;
     await createAndDispatch(createAdminClient(), {
       userId: user.id,
       vehicleId: vehicle.id,
       type: "sell_now",
-      title: `${vehicle.manufacturer} ${vehicle.model} 매각 적기`,
-      message: `현재 시세 ${analysis.current_price.toLocaleString("ko-KR")}원. ${analysis.rationale}`,
+      // 같은 차종을 여러 대 가진 경우 구분되도록 차량번호를 앞에 표기
+      title: `${plate ? `[${plate}] ` : ""}${vehicle.manufacturer} ${vehicle.model} 매각 적기`,
+      message: `${plate ? `차량번호 ${plate}\n` : ""}현재 시세 ${analysis.current_price.toLocaleString("ko-KR")}원. ${analysis.rationale}`,
       email: true, // 매각 적기는 중요 → 이메일도 발송
     });
   }

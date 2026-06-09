@@ -96,7 +96,9 @@ async function analyzeOne(
     input_hash: computeInputHash(vehicle, records),
   });
 
-  const carLabel = `${vehicle.manufacturer} ${vehicle.model}`;
+  // 같은 차종 여러 대를 구분할 수 있도록 차량번호를 앞에 표기
+  const plate = (vehicle as { plate_number?: string | null }).plate_number;
+  const carLabel = `${plate ? `[${plate}] ` : ""}${vehicle.manufacturer} ${vehicle.model}`;
   const notifications: Array<{
     type: "sell_now" | "price_drop" | "price_rise";
     title: string;
