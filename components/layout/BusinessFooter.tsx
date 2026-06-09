@@ -19,6 +19,20 @@ export function BusinessFooter() {
           통신판매업 신고번호 {BUSINESS_INFO.mailOrderRegNumber}
         </p>
         <p>주소: {BUSINESS_INFO.address}</p>
+        {/* 이메일을 주 문의 창구로 안내 (전화는 보조) */}
+        <p>
+          <span className="font-semibold text-foreground">문의(이메일)</span>:{" "}
+          <a
+            href={`mailto:${BUSINESS_INFO.email}`}
+            className="font-medium text-foreground hover:underline"
+          >
+            {BUSINESS_INFO.email}
+          </a>
+          <br />
+          <span className="text-[10px]">
+            이메일로 문의 주시면 가장 빠르게 도와드려요.
+          </span>
+        </p>
         <p>
           고객센터:{" "}
           <a
@@ -26,15 +40,8 @@ export function BusinessFooter() {
             className="hover:text-foreground hover:underline"
           >
             {BUSINESS_INFO.phone}
-          </a>
-          {" ㅣ "}
-          이메일:{" "}
-          <a
-            href={`mailto:${BUSINESS_INFO.email}`}
-            className="hover:text-foreground hover:underline"
-          >
-            {BUSINESS_INFO.email}
-          </a>
+          </a>{" "}
+          ({BUSINESS_INFO.phoneHours})
         </p>
         <p className="pt-2">
           <Link href="/terms" className="hover:text-foreground hover:underline">

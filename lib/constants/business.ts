@@ -27,7 +27,10 @@ export const BUSINESS_INFO = {
   /** 고객센터 전화번호 */
   phone: "010-4487-4972",
 
-  /** 고객 응대 이메일 */
+  /** 전화 상담 가능 시간 */
+  phoneHours: "평일 10–18시",
+
+  /** 고객 응대 이메일 (주 문의 창구) */
   email: "help@cartiming.app",
 
   /** 호스팅 제공자 */

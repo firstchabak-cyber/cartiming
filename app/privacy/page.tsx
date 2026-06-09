@@ -130,7 +130,7 @@ export default function PrivacyPage() {
             <li>성명: 장문성</li>
             <li>직책: 대표 (개인정보 보호책임자)</li>
             <li>이메일: help@cartiming.app</li>
-            <li>전화: 010-4487-4972</li>
+            <li>전화: 010-4487-4972 (평일 10–18시)</li>
           </ul>
           <p className="mt-2">
             개인정보 침해에 대한 신고·상담이 필요하신 경우 개인정보침해신고센터
