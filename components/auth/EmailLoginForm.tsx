@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CarLoaderOverlay } from "@/components/ui/CarLoader";
@@ -107,6 +108,16 @@ export function EmailLoginForm({ mode, next }: EmailLoginFormProps) {
         error={errors.password?.message}
         {...register("password")}
       />
+      {mode === "login" && (
+        <div className="-mt-1 text-right">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-muted hover:text-foreground"
+          >
+            비밀번호를 잊으셨나요?
+          </Link>
+        </div>
+      )}
       {errorMsg && <p className="text-sm text-danger">{errorMsg}</p>}
       {infoMsg && <p className="text-sm text-success">{infoMsg}</p>}
       <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>

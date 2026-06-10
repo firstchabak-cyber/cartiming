@@ -69,6 +69,11 @@ function LoginPageInner() {
             회원가입
           </Link>
         </p>
+
+        <p className="text-center text-xs leading-relaxed text-muted">
+          가입한 이메일이 기억나지 않으세요? 네이버·구글로 가입하셨다면 위
+          버튼으로 로그인됩니다. 그 외에는 평소 쓰시는 이메일로 로그인해보세요.
+        </p>
       </section>
 
       <p className="mt-auto text-center text-xs text-muted">{APP_TAGLINE}</p>
